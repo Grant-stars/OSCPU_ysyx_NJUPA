@@ -60,11 +60,17 @@ static int cmd_si(char *args) {
   else{
     long long inst_num = strtoll(args,NULL,10 );
     if(inst_num<0){
-      printf("Execute all remaining instructions");
+      printf("Execute all remaining instructions\n");
     }
     cpu_exec(inst_num);
   }
+  return 0;
+}
 
+static int cmd_info(char *args) {
+  if(*args=='r'){
+    isa_reg_display();
+  }
   return 0;
 }
 
@@ -80,7 +86,7 @@ static struct {
   { "c", "Continue the execution of the program", cmd_c },
   { "q", "Exit NEMU", cmd_q },
   { "si", "Step the program for N instructions", cmd_si },
-
+  { "info", "Print the state of program", cmd_info },
 
   /* TODO: Add more commands */
 

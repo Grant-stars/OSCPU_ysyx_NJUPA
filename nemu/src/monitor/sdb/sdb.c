@@ -19,6 +19,7 @@
 #include <readline/history.h>
 #include "sdb.h"
 #include <utils.h>
+#include <memory/paddr.h>
 
 static int is_batch_mode = false;
 
@@ -74,6 +75,31 @@ static int cmd_info(char *args) {
   return 0;
 }
 
+static int cmd_x(char *args) {
+  if(args==NULL){
+    printf("Argument required (num of outpupt and starting display address)\n");
+  }
+  else{
+    long long N = strtoll(strtok(args, " "),NULL,10 );
+    if(N<=0){
+      printf("Illegal input\n");
+    }
+    char* start_ptr = strtok(NULL, " ");
+    if(start_ptr ==NULL){
+      printf("Argument required (starting display address)\n");
+    }
+    else {
+      paddr_t start_addr = strtoll(start_ptr,NULL,16);
+      for(paddr_t i=0;i<N;i++){
+          char buf[32];
+          sprintf(buf,"0x%X:",(start_addr+4*i));
+          printf("%-12s0x%.8X\n",buf, paddr_read((start_addr+4*i), 4));
+      }
+    }
+  }
+  return 0;
+}
+
 
 static int cmd_help(char *args);
 
@@ -87,6 +113,7 @@ static struct {
   { "q", "Exit NEMU", cmd_q },
   { "si", "Step the program for N instructions", cmd_si },
   { "info", "Print the state of program", cmd_info },
+  { "x", "scan memory and output N bytes", cmd_x },
 
   /* TODO: Add more commands */
 

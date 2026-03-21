@@ -19,10 +19,11 @@
  * Type 'man regex' for more information about POSIX regex functions.
  */
 #include <regex.h>
+#include <string.h>
 
 enum {
   TK_NOTYPE = 256, TK_EQ,
-
+  TK_DECIMAL_INTEGER,
   /* TODO: Add more token types */
 
 };
@@ -39,6 +40,12 @@ static struct rule {
   {" +", TK_NOTYPE},    // spaces
   {"\\+", '+'},         // plus
   {"==", TK_EQ},        // equal
+  {"-", '-'},           // minus
+  {"\\*", '*'},         // times
+  {"/", '/'},           // minus
+  {"\\(", '('},         // left bracket
+  {"\\)", ')'},         // right bracket
+  {"[0-9]",  TK_DECIMAL_INTEGER},         // decimal integer
 };
 
 #define NR_REGEX ARRLEN(rules)
@@ -93,9 +100,19 @@ static bool make_token(char *e) {
          * to record the token in the array `tokens'. For certain types
          * of tokens, some extra actions should be performed.
          */
-
+        Assert((nr_token<32),"Too many tokens!");
         switch (rules[i].token_type) {
-          default: TODO();
+          case TK_NOTYPE: break;
+          case TK_DECIMAL_INTEGER: {
+            Assert(substr_len<32, "Decimal integer overflow!");
+            tokens[nr_token].type = rules[i].token_type;
+            strncpy(tokens[nr_token].str, substr_start,substr_len);
+            break;
+          }
+          default: {
+            tokens[nr_token].type = rules[i].token_type;
+            break;
+          }
         }
 
         break;

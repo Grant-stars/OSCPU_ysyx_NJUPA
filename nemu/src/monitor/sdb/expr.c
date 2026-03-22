@@ -23,8 +23,6 @@
 #include "../../../include/common.h"
 #include <ctype.h>
 
-#define EXPRERROR 0xffffffff
-
 enum {
   TK_NOTYPE = 256, TK_EQ,
   TK_DECIMAL_INTEGER,
@@ -56,10 +54,10 @@ static struct rule {
 
 static regex_t re[NR_REGEX] = {};
 
-word_t eval(int p, int q);
+word_t eval(int p, int q, bool* success);
 bool is_str_num(char* str);
 void is_str_num_test();
-word_t check_parentheses(uint32_t p, uint32_t q);
+bool check_parentheses(int p, int q, bool* success);
 word_t find_main_operator(int p, int q);
 
 
@@ -151,43 +149,44 @@ word_t expr(char *e, bool *success) {
   //test the is_str_num
   void is_str_num_test();
 
-  word_t value = eval(0, nr_token-1);
-  if(value==EXPRERROR){
-    *success = false;
+  *success = true;
+  word_t value = eval(0, nr_token-1,success);
+  if(*success==false){
     return 0;
   }
-  else{
-    *success = true;
-  }
+
   return value;
 }
 
 
-word_t eval(int p, int q){
-  uint32_t check_parentheses_return;
+word_t eval(int p, int q, bool* success){
+  if(*success==false){
+    return false;
+  }
+
   if (p > q) {
-    return EXPRERROR;
+    *success=false;
+    return false;
   }
   else if (p == q) {
     if(!is_str_num(tokens[p].str)){
-      return EXPRERROR;
+      *success=false;
+      return false;
     }
     else{
       return strtoul(tokens[p].str, NULL, 10);
     }
   }
-  else if ((check_parentheses_return = check_parentheses(p, q)) == true) {
-    return eval(p + 1, q - 1);
+  else if (check_parentheses(p, q,success)) {
+    return eval(p + 1, q - 1, success);
   }
-  else if (check_parentheses_return == EXPRERROR){
-    return EXPRERROR;
-  }
+
   else {
     int main_op = find_main_operator(p, q);
-    word_t val1 = eval(p, main_op - 1);
-    word_t val2= eval(main_op + 1, q);
-    if((val1==EXPRERROR)||(val2==EXPRERROR)){
-      return EXPRERROR;
+    word_t val1 = eval(p, main_op - 1, success);
+    word_t val2= eval(main_op + 1, q, success);
+    if(*success==false){
+      return false;
     }
     switch (tokens[main_op].type) {
         case '+': return val1 + val2;
@@ -224,7 +223,7 @@ void is_str_num_test(){
 }
 
 
-word_t check_parentheses(uint32_t p, uint32_t q){
+bool check_parentheses(int p, int q, bool* success){
   char parenthese_stack[32][2];
   uint32_t top = 0;
   for(uint32_t i = p; i<=q; i++){
@@ -235,7 +234,8 @@ word_t check_parentheses(uint32_t p, uint32_t q){
     }
     else if(tokens[i].type==')'){
       if(top==0){
-        return EXPRERROR;
+        *success=false;
+        return false;
       }
       else{
         if((i==q)&&(parenthese_stack[top-1][1]==p)){
@@ -246,7 +246,8 @@ word_t check_parentheses(uint32_t p, uint32_t q){
     }
   }
   if(top!=0){
-    return EXPRERROR;
+    *success=false;
+    return false;
   }
   else{
     return false;

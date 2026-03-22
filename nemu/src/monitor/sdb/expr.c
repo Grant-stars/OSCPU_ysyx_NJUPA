@@ -47,7 +47,7 @@ static struct rule {
   {"/", '/'},           // minus
   {"\\(", '('},         // left bracket
   {"\\)", ')'},         // right bracket
-  {"[0-9]",  TK_DECIMAL_INTEGER},         // decimal integer
+  {"[0-9]+",  TK_DECIMAL_INTEGER},         // decimal integer
 };
 
 #define NR_REGEX ARRLEN(rules)

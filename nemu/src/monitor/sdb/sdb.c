@@ -100,6 +100,19 @@ static int cmd_x(char *args) {
   return 0;
 }
 
+static int cmd_p(char *args) {
+  bool* success = malloc(1);
+  word_t value=expr(args,success);
+  if(!(*success)){
+    printf("Invalid expression!\n");
+  }
+  else{
+    printf("%s = %u\n",args, value);
+  }
+  return 0;
+}
+
+
 
 static int cmd_help(char *args);
 
@@ -114,6 +127,7 @@ static struct {
   { "si", "Step the program for N instructions", cmd_si },
   { "info", "Print the state of program", cmd_info },
   { "x", "scan memory and output N bytes", cmd_x },
+  { "p", "print the arithmetic expression", cmd_p },
 
   /* TODO: Add more commands */
 

@@ -23,6 +23,8 @@
 #include "../../../include/common.h"
 #include <ctype.h>
 
+#define TOKENSLENTH 65535
+
 enum {
   TK_NOTYPE = 256, TK_EQ,
   TK_DECIMAL_INTEGER,
@@ -83,7 +85,7 @@ typedef struct token {
   char str[32];
 } Token;
 
-static Token tokens[32] __attribute__((used)) = {};
+static Token tokens[TOKENSLENTH] __attribute__((used)) = {};
 static int nr_token __attribute__((used))  = 0;
 
 static bool make_token(char *e) {
@@ -108,7 +110,7 @@ static bool make_token(char *e) {
          * to record the token in the array `tokens'. For certain types
          * of tokens, some extra actions should be performed.
          */
-        Assert((nr_token<32),"Too many tokens!");
+        Assert((nr_token<TOKENSLENTH),"Too many tokens!");
         switch (rules[i].token_type) {
           case TK_NOTYPE: break;
           case TK_DECIMAL_INTEGER: {
@@ -230,7 +232,7 @@ void is_str_num_test(){
 
 
 bool check_parentheses(int p, int q, bool* success){
-  char parenthese_stack[32][2];
+  char parenthese_stack[TOKENSLENTH][2];
   uint32_t top = 0;
   for(uint32_t i = p; i<=q; i++){
     if(tokens[i].type=='('){

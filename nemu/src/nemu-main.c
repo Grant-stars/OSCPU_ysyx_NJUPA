@@ -14,11 +14,27 @@
 ***************************************************************************************/
 
 #include <common.h>
+#include "./monitor/sdb/sdb.h"
+#include <readline/readline.h>
+#include <readline/history.h>
 
 void init_monitor(int, char *[]);
 void am_init_monitor();
 void engine_start();
 int is_exit_status_bad();
+
+static void compare(){
+  FILE* fp=fopen("compare","w");
+  for (char *str; (str = readline("")) != NULL; ) {
+    char* out1=strtok(str, " ");
+    word_t value1 = strtoll(out1,NULL,10 );
+    char *out2 = out1 + strlen(out1) + 1;
+    bool* success = malloc(1);
+    word_t value2=expr(out2,success);
+    fprintf(fp,"%u %u %s\n",value1, value2, (value1==value2)?"CORRECT":"ERROR");
+  }
+  fclose(fp);
+}
 
 int main(int argc, char *argv[]) {
   /* Initialize the monitor. */
@@ -27,6 +43,9 @@ int main(int argc, char *argv[]) {
 #else
   init_monitor(argc, argv);
 #endif
+
+  compare();
+  return 0;
 
   /* Start engine. */
   engine_start();

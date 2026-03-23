@@ -117,6 +117,7 @@ static bool make_token(char *e) {
             Assert(substr_len<32, "Decimal integer overflow!");
             tokens[nr_token].type = rules[i].token_type;
             strncpy(tokens[nr_token].str, substr_start,substr_len);
+            (tokens[nr_token].str)[substr_len]='\0';
             nr_token++;
             break;
           }

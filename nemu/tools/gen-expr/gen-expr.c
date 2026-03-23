@@ -21,10 +21,12 @@
 #include <string.h>
 
 // this should be enough
-static char buf[65536] = {};
+static char buf1[65536] = {};
+static char buf2[65536] = {};
 static char code_buf[65536 + 128] = {}; // a little larger than `buf`
 static char *code_format =
 "#include <stdio.h>\n"
+"#include <stdint.h>\n"
 "int main() { "
 "  unsigned result = %s; "
 "  printf(\"%%u\", result); "
@@ -38,10 +40,10 @@ static uint32_t choose(uint32_t n);
 static void gen_num();
 static void gen(char ch);
 static void gen_rand_op();
+static void gen_uint32_t();
 
 
-
-int pos, depth;
+int pos1, pos2, depth;
 
 static void gen_rand_expr() {
   depth++;
@@ -62,31 +64,39 @@ static uint32_t choose(uint32_t n){
 
 static void gen_num(){
   if(choose(2)){
-    pos+=sprintf(buf+pos," ");
+    pos1+=sprintf(buf1+pos1," ");
+    pos2+=sprintf(buf2+pos2," ");
   }
 
-  pos+=sprintf(buf+pos,"%u",choose(UINT32_MAX));
+  uint32_t num = choose(UINT32_MAX);
+  pos1+=sprintf(buf1+pos1,"%u%c",num,'u');
+  pos2+=sprintf(buf2+pos2,"%u",num);
 
   if(choose(2)){
-    pos+=sprintf(buf+pos," ");
+    pos1+=sprintf(buf1+pos1," ");
+    pos2+=sprintf(buf2+pos2," ");
   }
 }
 
 static void gen(char ch){
   if(choose(2)){
-    pos+=sprintf(buf+pos," ");
+    pos1+=sprintf(buf1+pos1," ");
+    pos2+=sprintf(buf2+pos2," ");
   }
   
-  pos+=sprintf(buf+pos,"%c",ch);
+  pos1+=sprintf(buf1+pos1,"%c",ch);
+  pos2+=sprintf(buf2+pos2,"%c",ch);
 
   if(choose(2)){
-    pos+=sprintf(buf+pos," ");
+    pos1+=sprintf(buf1+pos1," ");
+    pos2+=sprintf(buf2+pos2," ");
   }
 }
 
 static void gen_rand_op(){
   if(choose(2)){
-    pos+=sprintf(buf+pos," ");
+    pos1+=sprintf(buf1+pos1," ");
+    pos2+=sprintf(buf2+pos2," ");
   }
   char ch;
   switch(choose(4)){
@@ -96,9 +106,12 @@ static void gen_rand_op(){
     case 3: ch =  '/';break;
     default: ch = '/';
   }
-  pos+=sprintf(buf+pos,"%c",ch);
+  pos1+=sprintf(buf1+pos1,"%c",ch);
+  pos2+=sprintf(buf2+pos2,"%c",ch);
+
   if(choose(2)){
-    pos+=sprintf(buf+pos," ");
+    pos1+=sprintf(buf1+pos1," ");
+    pos2+=sprintf(buf2+pos2," ");
   }
 }
 
@@ -112,11 +125,12 @@ int main(int argc, char *argv[]) {
   }
   int i;
   for (i = 0; i < loop; i ++) {
-    pos = 0;
+    pos1 = 0;
+    pos2 = 0;
     depth = 0;
     gen_rand_expr();
     if(depth>=MAXDEPTH) continue;
-    sprintf(code_buf, code_format, buf);
+    sprintf(code_buf, code_format, buf1);
 
     FILE *fp = fopen("/tmp/.code.c", "w");
     assert(fp != NULL);
@@ -133,7 +147,7 @@ int main(int argc, char *argv[]) {
     ret = fscanf(fp, "%d", &result);
     pclose(fp);
     if(ret==1){
-      printf("%u %s\n", result, buf);
+      printf("%u %s\n", result, buf2);
     }
   }
   return 0;

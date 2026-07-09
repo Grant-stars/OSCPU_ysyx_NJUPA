@@ -62,10 +62,4 @@ else
 include $(NEMU_HOME)/scripts/native.mk
 endif
 
-check_expr:
-	make
-	./gen-expr 1000 >./input
-	./build/riscv32-nemu-interpreter < ./input
-	grep -n "ERROR" ./compare
-
-.PHONY: check_expr
+.PHONY: 

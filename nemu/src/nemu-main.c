@@ -23,6 +23,8 @@ void am_init_monitor();
 void engine_start();
 int is_exit_status_bad();
 
+//Test expr
+/*
 static void compare(){
   FILE* fp=fopen("compare","w");
   for (char *str; (str = readline("")) != NULL; ) {
@@ -35,6 +37,7 @@ static void compare(){
   }
   fclose(fp);
 }
+*/
 
 int main(int argc, char *argv[]) {
   /* Initialize the monitor. */
@@ -43,9 +46,6 @@ int main(int argc, char *argv[]) {
 #else
   init_monitor(argc, argv);
 #endif
-
-  compare();
-  return 0;
 
   /* Start engine. */
   engine_start();

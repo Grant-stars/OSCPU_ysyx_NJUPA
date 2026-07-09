@@ -19,7 +19,7 @@
 #include <readline/history.h>
 #include "sdb.h"
 #include <utils.h>
-#include <memory/paddr.h>
+#include <memory/vaddr.h>
 
 static int is_batch_mode = false;
 
@@ -89,11 +89,11 @@ static int cmd_x(char *args) {
       printf("Argument required (starting display address)\n");
     }
     else {
-      paddr_t start_addr = strtoll(start_ptr,NULL,16);
-      for(paddr_t i=0;i<N;i++){
+      vaddr_t start_addr = strtoll(start_ptr,NULL,16);
+      for(vaddr_t i=0;i<N;i++){
           char buf[32];
           sprintf(buf,"0x%X:",(start_addr+4*i));
-          printf("%-12s0x%.8X\n",buf, paddr_read((start_addr+4*i), 4));
+          printf("%-12s0x%.8X\n",buf, vaddr_read((start_addr+4*i), 4));
       }
     }
   }

@@ -46,7 +46,7 @@ static struct rule {
   {"==", TK_EQ},        // equal
   {"-", '-'},           // minus
   {"\\*", '*'},         // times
-  {"/", '/'},           // minus
+  {"/", '/'},           // division
   {"\\(", '('},         // left bracket
   {"\\)", ')'},         // right bracket
   {"[0-9]+",  TK_DECIMAL_INTEGER},         // decimal integer

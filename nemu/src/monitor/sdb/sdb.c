@@ -80,7 +80,7 @@ static int cmd_x(char *args) {
     printf("Argument required (num of outpupt and starting display address)\n");
   }
   else{
-    long long N = strtoll(strtok(args, " "),NULL,10 );
+    int N = strtoll(strtok(args, " "),NULL,10 );
     if(N<=0){
       printf("Illegal input\n");
     }
@@ -90,7 +90,7 @@ static int cmd_x(char *args) {
     }
     else {
       vaddr_t start_addr = strtoll(start_ptr,NULL,16);
-      for(vaddr_t i=0;i<N;i++){
+      for(int i=0;i<N;i++){
           char buf[32];
           sprintf(buf,"0x%X:",(start_addr+4*i));
           printf("%-12s0x%.8X\n",buf, vaddr_read((start_addr+4*i), 4));

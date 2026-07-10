@@ -22,6 +22,7 @@
 #include <string.h>
 #include "../../../include/common.h"
 #include <ctype.h>
+#include <memory/vaddr.h>
 
 #define TOKENSLENTH 65535
 
@@ -30,6 +31,7 @@ enum {
   TK_DECIMAL_INTEGER,
   TK_HEX_INTEGER,
   TK_REG,
+  TK_DEREF,
   /* TODO: Add more token types */
 
 };
@@ -49,14 +51,13 @@ static struct rule {
   {"!=", TK_NEQ},        // neq
   {"&&", TK_AND},        // and
   {"-", '-'},           // minus
-  {"\\*", '*'},         // times
+  {"\\*", '*'},         // times or deref
   {"/", '/'},           // division
   {"\\(", '('},         // left bracket
   {"\\)", ')'},         // right bracket
   {"\\$[a-zA-Z0][0-9a-zA-Z_]*", TK_REG},      //reg
   {"0[xX][0-9a-fA-F]+", TK_HEX_INTEGER},      // hex integer
   {"[0-9]+",  TK_DECIMAL_INTEGER},            // decimal integer
-
 };
 
 #define NR_REGEX ARRLEN(rules)
@@ -171,9 +172,18 @@ word_t expr(char *e, bool *success) {
   }
 
   /* TODO: Insert codes to evaluate the expression. */
-
-
   *success = true;
+  //*若前面为表达式类型，则为乘，否则是解引用
+  for (int i = 0; i < nr_token; i ++) {
+    if (tokens[i].type == '*' && (i == 0 || 
+      (tokens[i - 1].type != TK_DECIMAL_INTEGER && 
+        tokens[i - 1].type !=TK_HEX_INTEGER && 
+        tokens[i - 1].type != TK_REG &&
+        tokens[i - 1].type != ')')) ) {
+      tokens[i].type = TK_DEREF;
+    }
+  }
+
   word_t value = eval(0, nr_token-1,success);
   if(*success==false){
     return 0;
@@ -219,8 +229,12 @@ word_t eval(int p, int q, bool* success){
 
   else {
     int main_op = find_main_operator(p, q);
-    word_t val1 = eval(p, main_op - 1, success);
-    word_t val2= eval(main_op + 1, q, success);
+    word_t val1=0;
+    word_t val2=0;
+    if(tokens[main_op].type!=TK_DEREF){
+      val1= eval(p, main_op - 1, success);
+    }
+    val2= eval(main_op + 1, q, success);
     if(*success==false){
       return false;
     }
@@ -238,6 +252,7 @@ word_t eval(int p, int q, bool* success){
         case TK_EQ: return (val1==val2);
         case TK_NEQ: return (val1!=val2);
         case TK_AND: return (val1&&val2);
+        case TK_DEREF: return (vaddr_read(val2,4));
         default: assert(0);
     }
   }
@@ -278,6 +293,7 @@ bool check_parentheses(int p, int q, bool* success){
 
 //运算符优先级:
 enum{
+  OP_DEREF, //解引用
   OP_TIMES_DIVISION, //乘除
   OP_PLUS_MINUS,  //加减
   OP_EQUAL, //相等运算符
@@ -305,22 +321,27 @@ word_t find_main_operator(int p, int q){
           index=i;
         }
 
-        if((tokens[i].type==TK_EQ || tokens[i].type==TK_NEQ) &&
+        else if((tokens[i].type==TK_EQ || tokens[i].type==TK_NEQ) &&
             priority<=OP_EQUAL){
           priority=OP_EQUAL;
           index=i;
         }
         else if(
-          ((tokens[i].type=='+')||(tokens[i].type=='-')) &&
+            ((tokens[i].type=='+')||(tokens[i].type=='-')) &&
             priority<=OP_PLUS_MINUS){
           priority=OP_PLUS_MINUS;
           index=i;
         }
         else if(
-        ((tokens[i].type=='*')||(tokens[i].type=='/')) &&
-          priority<=OP_TIMES_DIVISION){
+            ((tokens[i].type=='*')||(tokens[i].type=='/')) &&
+            priority<=OP_TIMES_DIVISION){
           priority=OP_TIMES_DIVISION;
           index=i; 
+        }
+        else if((tokens[i].type==TK_DEREF) &&
+            priority<=OP_DEREF){
+          priority=OP_DEREF;
+          index=i;
         }
       }
     }

@@ -233,6 +233,8 @@ word_t eval(int p, int q, bool* success){
             return false;
           }
           return val1 / val2;
+        case TK_EQ: return (val1==val2?1:0);
+        
         default: assert(0);
     }
   }
@@ -271,8 +273,16 @@ bool check_parentheses(int p, int q, bool* success){
 }
 
 
+//运算符优先级:
+enum{
+  OP_TIMES_DIVISION, //乘除
+  OP_PLUS_MINUS,  //加减
+  OP_EQUAL, //相等运算符
+  OP_AND, //逻辑与
+};
+
 word_t find_main_operator(int p, int q){
-  char op=0;
+  int priority =-1;
   int index=-1;
   int parentheses = 0;
   for(int i=p; i<=q; i++){
@@ -284,19 +294,24 @@ word_t find_main_operator(int p, int q){
     }
     else{
       //if is out of parentheses
+
       if(!parentheses){
-        if((tokens[i].type=='+')||
-        (tokens[i].type=='-')){
-          op=tokens[i].type;
+        if((tokens[i].type==TK_EQ) &&
+            priority<=OP_EQUAL){
+          priority=OP_EQUAL;
           index=i;
         }
         else if(
-        (tokens[i].type=='*')||
-        (tokens[i].type=='/')){
-          if((op!='+')&&(op!='-')){
-            op=tokens[i].type;
-            index=i;
-          }
+          ((tokens[i].type=='+')||(tokens[i].type=='-')) &&
+            priority<=OP_PLUS_MINUS){
+          priority=OP_PLUS_MINUS;
+          index=i;
+        }
+        else if(
+        ((tokens[i].type=='*')||(tokens[i].type=='/')) &&
+          priority<=OP_TIMES_DIVISION){
+          priority=OP_TIMES_DIVISION;
+          index=i; 
         }
       }
     }

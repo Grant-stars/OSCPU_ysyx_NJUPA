@@ -28,6 +28,7 @@
 enum {
   TK_NOTYPE = 256, TK_EQ,
   TK_DECIMAL_INTEGER,
+  TK_HEX_INTEGER,
   /* TODO: Add more token types */
 
 };
@@ -49,7 +50,9 @@ static struct rule {
   {"/", '/'},           // division
   {"\\(", '('},         // left bracket
   {"\\)", ')'},         // right bracket
+  {"0[xX][0-9a-fA-F]+", TK_HEX_INTEGER},      // hex integer
   {"[0-9]+",  TK_DECIMAL_INTEGER},         // decimal integer
+
 };
 
 #define NR_REGEX ARRLEN(rules)
@@ -59,6 +62,8 @@ static regex_t re[NR_REGEX] = {};
 word_t eval(int p, int q, bool* success);
 bool is_str_num(char* str);
 void is_str_num_test();
+bool is_str_hex_num(char* str);
+void is_str_hex_num_test();
 bool check_parentheses(int p, int q, bool* success);
 word_t find_main_operator(int p, int q);
 
@@ -121,6 +126,15 @@ static bool make_token(char *e) {
             nr_token++;
             break;
           }
+          case TK_HEX_INTEGER: {
+            Assert(substr_len<32, "Hex integer overflow!");
+            tokens[nr_token].type = rules[i].token_type;
+            strncpy(tokens[nr_token].str, substr_start, substr_len);
+            (tokens[nr_token].str)[substr_len]='\0';
+            nr_token++;
+            break;
+
+          }
           default: {
             tokens[nr_token].type = rules[i].token_type;
             nr_token++;
@@ -150,7 +164,9 @@ word_t expr(char *e, bool *success) {
 
   /* TODO: Insert codes to evaluate the expression. */
   //test the is_str_num
-  void is_str_num_test();
+  
+  //is_str_num_test();
+  //is_str_hex_num_test();
 
   *success = true;
   word_t value = eval(0, nr_token-1,success);
@@ -172,12 +188,15 @@ word_t eval(int p, int q, bool* success){
     return false;
   }
   else if (p == q) {
-    if(!is_str_num(tokens[p].str)){
-      *success=false;
-      return false;
+    if(is_str_num(tokens[p].str)){
+      return strtoul(tokens[p].str, NULL, 10);
+    }
+    else if(is_str_hex_num(tokens[p].str)){
+      return strtoul(tokens[p].str, NULL, 16);
     }
     else{
-      return strtoul(tokens[p].str, NULL, 10);
+      *success=false;
+      return false;
     }
   }
   else if (check_parentheses(p, q,success)) {
@@ -222,6 +241,29 @@ bool is_str_num(char* str){
   return true;
 }
 
+bool is_str_hex_num(char* str){
+  Assert(str, "NULL ptr!");
+  char* p=str;
+  if((*p)=='\0' || (*p)!='0'){
+    return false;
+  }
+  p++;
+  if((*p)!='x' && (*p)!='X'){
+    return false;
+  }
+  p++;
+  if(*p=='\0'){
+    return false;
+  }
+  while(*p!='\0'){
+    if(!isxdigit(*p)){
+      return false;
+    }
+    p++;
+  }
+  return true;
+}
+
 void is_str_num_test(){
   Assert(is_str_num("12309"),"func is_str_num error");
   Assert(!is_str_num("123p9"),"func is_str_num error");
@@ -229,6 +271,17 @@ void is_str_num_test(){
   Assert(!is_str_num("aaaa"),"func is_str_num error");
   Assert(!is_str_num(" "),"func is_str_num error");
   Assert(!is_str_num(""),"func is_str_num error");
+}
+
+void is_str_hex_num_test(){
+  printf("s_str_hex_num_test:\n");
+  Assert(is_str_hex_num("0x12309"),"func is_str_hex_num error");
+  Assert(is_str_hex_num("0X1A3b9"),"func is_str_hex_num error");
+  Assert(!is_str_hex_num("2309"),"func is_str_hex_num error");
+  Assert(!is_str_hex_num("aaaa"),"func is_str_hex_num error");
+  Assert(!is_str_hex_num(" "),"func is_str_hex_num error");
+  Assert(!is_str_hex_num(""),"func is_str_hex_num error");
+  Assert(!is_str_hex_num("0x"),"func is_str_hex_num error");
 }
 
 

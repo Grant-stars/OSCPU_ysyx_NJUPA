@@ -26,7 +26,7 @@
 #define TOKENSLENTH 65535
 
 enum {
-  TK_NOTYPE = 256, TK_EQ, TK_NEQ,
+  TK_NOTYPE = 256, TK_EQ, TK_NEQ, TK_AND,
   TK_DECIMAL_INTEGER,
   TK_HEX_INTEGER,
   TK_REG,
@@ -47,6 +47,7 @@ static struct rule {
   {"\\+", '+'},         // plus
   {"==", TK_EQ},        // equal
   {"!=", TK_NEQ},        // neq
+  {"&&", TK_AND},        // and
   {"-", '-'},           // minus
   {"\\*", '*'},         // times
   {"/", '/'},           // division
@@ -234,8 +235,9 @@ word_t eval(int p, int q, bool* success){
             return false;
           }
           return val1 / val2;
-        case TK_EQ: return (val1==val2?1:0);
-        case TK_NEQ: return (val1!=val2?1:0);
+        case TK_EQ: return (val1==val2);
+        case TK_NEQ: return (val1!=val2);
+        case TK_AND: return (val1&&val2);
         default: assert(0);
     }
   }
@@ -297,6 +299,12 @@ word_t find_main_operator(int p, int q){
       //if is out of parentheses
 
       if(!parentheses){
+        if((tokens[i].type==TK_AND) &&
+            priority<=OP_AND){
+          priority=OP_AND;
+          index=i;
+        }
+
         if((tokens[i].type==TK_EQ || tokens[i].type==TK_NEQ) &&
             priority<=OP_EQUAL){
           priority=OP_EQUAL;

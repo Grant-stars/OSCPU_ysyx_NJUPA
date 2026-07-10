@@ -25,11 +25,22 @@ const char *regs[] = {
 
 void isa_reg_display() {
   for(int i =0;i<32;i++){
-    printf("%-15s%-20X%-20d\n",regs[i], cpu.gpr[i], cpu.gpr[i]);
+    printf("%-15s%-20"PRIX32"%-20"PRIu32"\n",regs[i], cpu.gpr[i], cpu.gpr[i]);
   }
 }
 
 word_t isa_reg_str2val(const char *s, bool *success) {
+  if(!strcmp(s,"0")){
+    *success = true;
+    return cpu.gpr[0];
+  }
+  for(int i=1; i<32; i++){
+    if(!strcmp(s,regs[i])){
+      *success = true;
+      return cpu.gpr[i];
+    }
+  }
+  *success=false;
   return 0;
 }
   

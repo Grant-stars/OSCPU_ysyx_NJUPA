@@ -25,6 +25,7 @@ static int is_batch_mode = false;
 
 void init_regex();
 void init_wp_pool();
+void wp_display();
 
 /* We use the `readline' library to provide more flexibility to read from stdin. */
 static char* rl_gets() {
@@ -69,8 +70,17 @@ static int cmd_si(char *args) {
 }
 
 static int cmd_info(char *args) {
-  if(*args=='r'){
+  if(args==NULL){
+    printf("Argument required for info\n");
+  }
+  else if(*args=='r' && *(args+1)=='\0'){
     isa_reg_display();
+  }
+  else if(*args=='w' && *(args+1)=='\0'){
+    wp_display();
+  }
+  else {
+    printf("Invalid info args!\n");
   }
   return 0;
 }
@@ -101,6 +111,10 @@ static int cmd_x(char *args) {
 }
 
 static int cmd_p(char *args) {
+  if(args==NULL){
+    printf("Argument required for p\n");
+    return 0;
+  }
   bool* success = malloc(1);
   word_t value=expr(args,success);
   if(!(*success)){
@@ -108,6 +122,37 @@ static int cmd_p(char *args) {
   }
   else{
     printf("%s = %u\n",args, value);
+  }
+  return 0;
+}
+
+static int cmd_w(char *args) {
+  if(args==NULL){
+    printf("Argument required for w\n");
+    return 0;
+  }
+  int number = new_wp(args);
+  printf("Watchpoint %d: %s\n", number, args);
+  return 0;
+}
+
+static int cmd_d(char *args) {
+  if(args==NULL){
+    printf("Argument required for d\n");
+    return 0;
+  }
+  bool success;
+  int number = (int)expr(args,&success);
+  if(!success){
+    printf("Invalid expression!\n");
+  }
+  else{
+    if(!free_wp(number)){
+      printf("Failed to delete watchpoint %d\n", number);
+    }
+    else{
+      printf("Deleted watchpoint %d\n", number);
+    }
   }
   return 0;
 }
@@ -126,8 +171,10 @@ static struct {
   { "q", "Exit NEMU", cmd_q },
   { "si", "Step the program for N instructions", cmd_si },
   { "info", "Print the state of program", cmd_info },
-  { "x", "scan memory and output N bytes", cmd_x },
-  { "p", "print the arithmetic expression", cmd_p },
+  { "x", "Scan memory and output N bytes", cmd_x },
+  { "p", "Print the arithmetic expression", cmd_p },
+  { "w", "Set the watchpoint", cmd_w },
+  { "d", "Delete watchpoint", cmd_d },
 
   /* TODO: Add more commands */
 

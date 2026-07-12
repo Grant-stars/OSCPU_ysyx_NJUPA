@@ -62,4 +62,7 @@ else
 include $(NEMU_HOME)/scripts/native.mk
 endif
 
-.PHONY: 
+count:
+	find . \( -name "*.c" -o -name "*.h" \) -print0 | xargs -0 cat | wc -l
+
+.PHONY: count

@@ -115,9 +115,9 @@ static int cmd_p(char *args) {
     printf("Argument required for p\n");
     return 0;
   }
-  bool* success = malloc(1);
-  word_t value=expr(args,success);
-  if(!(*success)){
+  bool success ;
+  word_t value=expr(args,&success);
+  if(!success){
     printf("Invalid expression!\n");
   }
   else{

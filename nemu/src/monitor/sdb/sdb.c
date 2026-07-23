@@ -121,7 +121,7 @@ static int cmd_p(char *args) {
     printf("Invalid expression!\n");
   }
   else{
-    printf("%s = %u\n",args, value);
+    printf("%s = %u (0x%x)\n",args, value, value);
   }
   return 0;
 }

@@ -43,7 +43,9 @@ static void trace_and_difftest(Decode *_this, vaddr_t dnpc) {
 #ifdef CONFIG_WATCHPOINT
     bool trigger = scan_wp();
     if(trigger){
-      nemu_state.state=NEMU_STOP;
+      if(nemu_state.state==NEMU_RUNNING){
+        nemu_state.state=NEMU_STOP;
+      }
       IFDEF(CONFIG_ITRACE, printf("Program stopped at: "));
       IFDEF(CONFIG_ITRACE, puts(_this->logbuf));
     }

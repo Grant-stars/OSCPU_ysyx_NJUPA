@@ -90,20 +90,29 @@ static int cmd_x(char *args) {
     printf("Argument required (num of outpupt and starting display address)\n");
   }
   else{
-    int N = strtoll(strtok(args, " "),NULL,10 );
+    char *args_end = args + strlen(args);
+    char* N_str=strtok(args, " ");
+    int N_len=strlen(N_str);
+    int N = strtoll(N_str,NULL,10 );
     if(N<=0){
       printf("Illegal input\n");
     }
-    char* start_ptr = strtok(NULL, " ");
-    if(start_ptr ==NULL){
+    char* start_ptr = N_str+N_len+1;
+    if(start_ptr>args_end){
       printf("Argument required (starting display address)\n");
     }
     else {
-      vaddr_t start_addr = strtoll(start_ptr,NULL,16);
-      for(int i=0;i<N;i++){
-          char buf[32];
-          sprintf(buf,"0x%X:",(start_addr+4*i));
-          printf("%-12s0x%.8X\n",buf, vaddr_read((start_addr+4*i), 4));
+      bool success ;
+      word_t start_addr=expr(start_ptr,&success);
+      if(!success){
+        printf("Invalid expression!\n");
+      }
+      else{
+        for(int i=0;i<N;i++){
+            char buf[32];
+            sprintf(buf,"0x%X:",(start_addr+4*i));
+            printf("%-12s0x%.8X\n",buf, vaddr_read((start_addr+4*i), 4));
+        }
       }
     }
   }

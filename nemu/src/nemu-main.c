@@ -24,20 +24,20 @@ void engine_start();
 int is_exit_status_bad();
 
 //Test expr
-/*
+#ifdef CONFIG_EXPR_TEST
 static void compare(){
   FILE* fp=fopen("compare","w");
   for (char *str; (str = readline("")) != NULL; ) {
     char* out1=strtok(str, " ");
     word_t value1 = strtoll(out1,NULL,10 );
     char *out2 = out1 + strlen(out1) + 1;
-    bool* success = malloc(1);
-    word_t value2=expr(out2,success);
+    bool success;
+    word_t value2=expr(out2,&success);
     fprintf(fp,"%u %u %s\n",value1, value2, (value1==value2)?"CORRECT":"ERROR");
   }
   fclose(fp);
 }
-*/
+#endif
 
 int main(int argc, char *argv[]) {
   /* Initialize the monitor. */
@@ -45,6 +45,11 @@ int main(int argc, char *argv[]) {
   am_init_monitor();
 #else
   init_monitor(argc, argv);
+#endif
+
+#ifdef CONFIG_EXPR_TEST
+  compare();
+  return 0;
 #endif
 
   /* Start engine. */

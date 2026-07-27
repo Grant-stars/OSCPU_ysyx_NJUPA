@@ -129,7 +129,10 @@ int main(int argc, char *argv[]) {
     pos2 = 0;
     depth = 0;
     gen_rand_expr();
-    if(depth>=MAXDEPTH) continue;
+    if(depth>=MAXDEPTH){
+      i--;
+      continue;
+    }
     sprintf(code_buf, code_format, buf1);
 
     FILE *fp = fopen("/tmp/.code.c", "w");
@@ -138,7 +141,10 @@ int main(int argc, char *argv[]) {
     fclose(fp);
 
     int ret = system("gcc -Wno-overflow -Wno-div-by-zero /tmp/.code.c -o /tmp/.expr");
-    if (ret != 0) continue;
+    if (ret != 0){
+      i--;
+      continue;
+    }
 
     fp = popen("/tmp/.expr 2>/dev/null", "r");
     assert(fp != NULL);
@@ -148,6 +154,9 @@ int main(int argc, char *argv[]) {
     pclose(fp);
     if(ret==1){
       printf("%u %s\n", result, buf2);
+    }
+    else{
+      i--;
     }
   }
   return 0;

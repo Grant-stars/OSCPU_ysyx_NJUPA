@@ -65,4 +65,7 @@ endif
 count:
 	find . \( -name "*.c" -o -name "*.h" \) -print0 | xargs -0 cat | wc -l
 
-.PHONY: count
+test_expr:
+	./check_expr.sh
+
+.PHONY: count test_expr

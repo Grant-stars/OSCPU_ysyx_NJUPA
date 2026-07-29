@@ -36,16 +36,58 @@ INSTPAT(模式字符串, 指令名称, 指令类型, 指令执行操作);
 由这两个宏包裹起来的即各条模式匹配主体语句。以：
 
 ```text
-INSTPAT("??????? ????? ????? ??? ????? 00101 11", auipc  , U, R(rd) = s->pc + imm);
+INSTPAT("??????? ????? ????? 100 ????? 00000 11", lbu    , I, R(rd) = Mr(src1 + imm, 1));
 ```
 
-为例，即用`auipc`这条规则去匹配指令（信息包含于结构体s中）。将`INSTPAT`展开，首先会进入`pattern_decode`函数，提取模式字符串的特征，用于后续检验指令是否匹配该条规则。
+为例，即用`lbu`这条规则去匹配指令（信息包含于结构体s中）。
 
+将`INSTPAT`展开，首先会进入`pattern_decode`函数，提取模式字符串的特征，用于后续检验指令是否匹配该条规则。函数主体是`macro64(0)`，此处运用递归将宏展开，最终达到生成`macro(0)~macro(63)`的效果。对于`macro(i)`，`__key`依次移位，提取出模式字符串中的1，其余为0，也即提取出`opcode`和`funct3`；`__mask`将非`'?'`字符记录下来，作为掩码；`__shift`则从`str[0]`依次往后读取，记录下最后一个0或1后面的`'?'`，也即表示`opcode`距离最低位的比特数量。此处其值为：
 
+```text
+key = 100000000000011
+mask = 111000001111111 
+shift = 0
+```
 
+接着会利用得到的`shift` 、` mask`和 `key`对取得的指令`(uint64_t)INSTPAT_INST(s)`进行检查，看是否符合该条指令规则。若符合规则，将会利用宏`INSTPAT_MATCH`进行进一步的译码操作。其中宏参数`##__VA_ARGS__`表示`INSTPAT`宏所接受及参数中除了`pattern`的其余参数（可变参数）。在宏内，首先会定义`rd`、`src1` 、 `src2` 、 `imm` 等变量为后续做准备。接着调用`decode_operand`函数解析出指令中的操作数。在其中用到宏`BITS`进行位抽取，并且通过`src1R()` 、`src2R()`、` immS()`等宏，根据传入的指令类型`type`来进行操作数的译码，并将结果将记录到函数参数`rd`, `src1`, `src2`和`imm`中：
 
+```text
+  int rs1 = BITS(i, 19, 15);	#位抽取获取五位数字表示的寄存器rs1
+  int rs2 = BITS(i, 24, 20);	#位抽取获取五位数字表示的寄存器rs2
+  *rd     = BITS(i, 11, 7);		#位抽取获取五位数字表示的寄存器rd
+ 
+#define src1R() do { *src1 = R(rs1); } while (0)	#将rs1的读取结果记录到相应的操作数变量src1中
+#define src2R() do { *src2 = R(rs2); } while (0)	#将rs2的读取结果记录到相应的操作数变量src2中
+#define immI() do { *imm = SEXT(BITS(i, 31, 20), 12); } while(0)	#抽取出I型立即数
+#define immU() do { *imm = SEXT(BITS(i, 31, 12), 20) << 12; } while(0)		#抽取出U型立即数
+#define immS() do { *imm = (SEXT(BITS(i, 31, 25), 7) << 5) | BITS(i, 11, 7); } while(0)		#抽取出S型立即数
 
+```
 
+#### 执行
 
+在执行完译码之后，`INSTPAT_MATCH`中的`__VA_ARGS__ `即传入`INSTPAT`宏的`指令执行操作`参数（如`R(rd) = Mr(src1 + imm, 1))`），相应的操作宏如：
 
+```text
+#define R(i) gpr(i)		#读写寄存器
+#define Mr vaddr_read	#读内存
+#define Mw vaddr_write	#写内存
 
+#该函数会检验传入的寄存器数字是否符合要求
+static inline int check_reg_idx(int idx) {
+  IFDEF(CONFIG_RT_CHECK, assert(idx >= 0 && idx < MUXDEF(CONFIG_RVE, 16, 32)));
+  return idx;
+}
+
+#define gpr(idx) (cpu.gpr[check_reg_idx(idx)])	#cpu.gpr即寄存器堆
+```
+
+`INSTPAT_MATCH`结束之后，会跳转至`INSTPAT_END()`宏生成的`__instpat_end_`标签处，也即所有模式匹配规则的后面，代表一条指令解析完毕。随后`decode_exec()`函数将会返回`0`, 并一路返回到`exec_once()`函数中.
+
+#### 更新
+
+最后是更新PC，将`s->dnpc`赋值给`cpu.pc`即可。**在指令执行的过程中需正确地维护`s->dnpc`。**
+
+### 调试宏
+
+利用`-E`选项生成`.i`预处理结果文件查看宏展开，可运用`gdb`或者`printf`调试

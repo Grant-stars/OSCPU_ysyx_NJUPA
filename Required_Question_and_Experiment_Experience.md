@@ -7,3 +7,45 @@
 ```
 
 # 实验心得
+
+## PA2
+
+### 整理一条指令在NEMU中的执行过程
+
+首先`exec_once`负责一条指令的执行。接受一个`Decode`类型的结构体指针`s`, 其中该结构体包含相关`PC`以及`ISADecodeInfo isa` （对于`risc-v32`来说是包含了`uint32_t inst`的一个结构体）。随后调用`isa_exec_once`根据具体的`isa`进行对应的指令操作。
+
+#### 取指
+
+`isa_exec_once()`做的第一件事情就是取指令，调用函数`inst_fetch()`(在`nemu/include/cpu/ifetch.h`中定义)专门负责取指令的工作. `inst_fetch()`最终会根据参数`len`来调用`vaddr_ifetch()`(在`nemu/src/memory/vaddr.c`中定义), 而目前`vaddr_ifetch()`又会通过`paddr_read()`来访问物理内存中的内容. 因此, 取指操作的本质只不过就是一次内存的访问而已.
+
+`isa_exec_once()`在调用`inst_fetch()`的时候传入了`s->snpc`的地址, 因此`inst_fetch()`最后还会根据`len`来更新`s->snpc`, 从而让`s->snpc`指向下一条指令.
+
+#### 译码
+
+紧接着进入`decode_exec`函数，用`INSTPAT`模式匹配去匹配指令，解析出具体的`opcode`。`INSTPAT`模式匹配格式如下:
+
+```text
+INSTPAT(模式字符串, 指令名称, 指令类型, 指令执行操作);
+例如：INSTPAT("??????? ????? ????? ??? ????? 00101 11", auipc, U, R(rd) = s->pc + imm);
+```
+
+`指令名称`在代码中仅当注释使用, 不参与宏展开; `指令类型`用于后续译码过程; 而`指令执行操作`则是通过C代码来模拟指令执行的真正行为.
+
+首先`INSTPAT_START()`宏会定义`const void * __instpat_end = &&__instpat_end_`标签地址方便`goto`语句跳转至`INSTPAT_END()`宏生成的`__instpat_end_`标签处，代表一条指令解析完毕。
+
+由这两个宏包裹起来的即各条模式匹配主体语句。以：
+
+```text
+INSTPAT("??????? ????? ????? ??? ????? 00101 11", auipc  , U, R(rd) = s->pc + imm);
+```
+
+为例，即用`auipc`这条规则去匹配指令（信息包含于结构体s中）。将`INSTPAT`展开，首先会进入`pattern_decode`函数，提取模式字符串的特征，用于后续检验指令是否匹配该条规则。
+
+
+
+
+
+
+
+
+

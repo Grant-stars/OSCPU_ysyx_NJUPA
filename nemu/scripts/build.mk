@@ -47,7 +47,17 @@ $(OBJ_DIR)/%.o: %.cc
 
 .PHONY: app clean
 
-app: $(BINARY)
+# path relative to the nemu
+MACRO_FILE += src/isa/riscv32/inst.c
+
+PREPROCESSING := $(MACRO_FILE:%.c=$(OBJ_DIR)/%.i)
+
+$(OBJ_DIR)/%.i: %.c
+	@echo + PREPRO $<
+	@mkdir -p $(dir $@)
+	@$(CC) $(CFLAGS) -E -o $@ $<
+
+app: $(BINARY) $(PREPROCESSING)
 
 $(BINARY):: $(OBJS) $(ARCHIVES)
 	@echo + LD $@

@@ -141,7 +141,9 @@ static int cmd_w(char *args) {
     return 0;
   }
   int number = new_wp(args);
-  printf("Watchpoint %d: %s\n", number, args);
+  if(number!=-1){
+    printf("Watchpoint %d: %s\n", number, args);
+  }
   return 0;
 }
 

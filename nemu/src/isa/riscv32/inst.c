@@ -22,6 +22,17 @@
 #define Mr vaddr_read
 #define Mw vaddr_write
 #define JA s->dnpc
+#define RS RightShift
+#define LS LeftShift
+#define RightShift(flag, src, shamt)  ({  \
+  int32_t s_src = (int32_t)src; \
+  uint32_t u_src = (uint32_t)src; \
+  word_t as = s_src >> shamt;  \
+  word_t ls = u_src >> shamt; \
+  flag ? as : ls;\
+})
+#define LeftShift(src, shamt) ({ src << shamt;})
+
 
 enum {
   TYPE_I, TYPE_U, TYPE_S, TYPE_J, TYPE_B, TYPE__R,
@@ -35,18 +46,20 @@ enum {
 #define immS() do { *imm = (SEXT(BITS(i, 31, 25), 7) << 5) | BITS(i, 11, 7); } while(0)
 #define immJ() do { *imm = SEXT((BITS(i, 31, 31)<<20 | BITS(i, 19, 12)<<12 | BITS(i, 20, 20)<<11 | BITS(i, 30, 21)<<1 | 0), 21); } while(0)
 #define immB() do { *imm = (SEXT(BITS(i, 31, 31), 1) <<12 | BITS(i, 7, 7) <<11 | BITS(i, 30, 25) <<5 | BITS(i, 11, 8) <<1 | 0); } while(0)
-static void decode_operand(Decode *s, int *rd, word_t *src1, word_t *src2, word_t *imm, int type) {
+#define shamtI() do { *shamt = BITS(i, 24, 20);} while(0)
+#define shamtR() do { *shamt = (BITS(R(rs2), 4, 0));} while(0)
+static void decode_operand(Decode *s, int *rd, word_t *src1, word_t *src2, word_t *imm, word_t *shamt, int type) {
   uint32_t i = s->isa.inst;
   int rs1 = BITS(i, 19, 15);
   int rs2 = BITS(i, 24, 20);
   *rd     = BITS(i, 11, 7);
   switch (type) {
-    case TYPE_I: src1R();          immI(); break;
-    case TYPE_U:                   immU(); break;
-    case TYPE_S: src1R(); src2R(); immS(); break;
-    case TYPE_J:                   immJ(); break;
-    case TYPE_B: src1R(); src2R(); immB(); break;
-    case TYPE__R: src1R(); src2R();       ; break;
+    case TYPE_I: src1R();          immI(); shamtI(); break;
+    case TYPE_U:                   immU();           break;
+    case TYPE_S: src1R(); src2R(); immS();           break;
+    case TYPE_J:                   immJ();           break;
+    case TYPE_B: src1R(); src2R(); immB();           break;
+    case TYPE__R: src1R(); src2R();        shamtR(); break;
     case TYPE_N: break;
     default: panic("unsupported type = %d", type);
   }
@@ -58,8 +71,8 @@ static int decode_exec(Decode *s) {
 #define INSTPAT_INST(s) ((s)->isa.inst)
 #define INSTPAT_MATCH(s, name, type, ... /* execute body */ ) { \
   int rd = 0; \
-  word_t src1 = 0, src2 = 0, imm = 0; \
-  decode_operand(s, &rd, &src1, &src2, &imm, concat(TYPE_, type)); \
+  word_t src1 = 0, src2 = 0, imm = 0, shamt = 0; \
+  decode_operand(s, &rd, &src1, &src2, &imm, &shamt, concat(TYPE_, type)); \
   __VA_ARGS__ ; \
 }
 
@@ -68,9 +81,13 @@ static int decode_exec(Decode *s) {
   INSTPAT("??????? ????? ????? 010 ????? 00000 11", lw     , I, R(rd) = Mr(src1 + imm, 4));
   INSTPAT("??????? ????? ????? 100 ????? 00000 11", lbu    , I, R(rd) = Mr(src1 + imm, 1));
   INSTPAT("??????? ????? ????? 010 ????? 01000 11", sw     , S, Mw(src1 + imm, 4, src2));
+  INSTPAT("??????? ????? ????? 001 ????? 01000 11", sh     , S, Mw(src1 + imm ,2 ,src2));
   INSTPAT("??????? ????? ????? 000 ????? 01000 11", sb     , S, Mw(src1 + imm, 1, src2));
   INSTPAT("??????? ????? ????? 000 ????? 00100 11", addi   , I, R(rd) = src1 + imm);
   INSTPAT("??????? ????? ????? 011 ????? 00100 11", sltiu  , I, R(rd) = (src1 < imm ? 1:0));
+  INSTPAT("??????? ????? ????? 100 ????? 00100 11", xori   , I, R(rd) = src1 ^ imm);
+  INSTPAT("??????? ????? ????? 111 ????? 00100 11", andi   , I, R(rd) = src1 & imm);
+  INSTPAT("0100000 ????? ????? 101 ????? 00100 11", srai   , I, R(rd) = RS(1, src1, shamt));
   INSTPAT("??????? ????? ????? ??? ????? 11011 11", jal    , J, {R(rd) = s->snpc; JA = s->pc + imm;});
   INSTPAT("??????? ????? ????? 000 ????? 11001 11", jalr   , I, {R(rd) = s->snpc; JA = (src1 + imm)&(~1);});
   INSTPAT("??????? ????? ????? 000 ????? 11000 11", beq    , B, {if (src1 == src2) JA = s->pc + imm;});
@@ -78,8 +95,10 @@ static int decode_exec(Decode *s) {
   INSTPAT("0000000 ????? ????? 011 ????? 01100 11", sltu   , _R,R(rd) = (src1 < src2 ? 1:0));
   INSTPAT("0000000 ????? ????? 000 ????? 01100 11", add    , _R,R(rd) = src1 + src2);
   INSTPAT("0100000 ????? ????? 000 ????? 01100 11", sub    , _R,R(rd) = src1 - src2);
+  INSTPAT("0000000 ????? ????? 001 ????? 01100 11", sll    , _R,R(rd) = LS(src1, shamt));
   INSTPAT("0000000 ????? ????? 100 ????? 01100 11", xor    , _R,R(rd) = src1 ^ src2);
   INSTPAT("0000000 ????? ????? 110 ????? 01100 11", or     , _R,R(rd) = src1 | src2);
+  INSTPAT("0000000 ????? ????? 111 ????? 01100 11", and    , _R,R(rd) = src1 & src2);
 
 
   INSTPAT("0000000 00001 00000 000 00000 11100 11", ebreak , N, NEMUTRAP(s->pc, R(10))); // R(10) is $a0

@@ -33,11 +33,14 @@
 })
 #define LeftShift(src, shamt) ({ src << shamt;})
 
-#define _DIV(dividend, divisor)  ({ (!divisor)?-1:  \
+#define _DIV(dividend, divisor) ({ (!divisor)?-1:  \
   ((dividend==INT32_MIN && divisor==-1)?INT32_MIN:  \
-  dividend/divisor); \
+  dividend/divisor);  \
 })
-
+#define REM(dividend, divisor) ({ (!divisor)?dividend:  \
+  ((dividend==INT32_MIN && divisor==-1)?0:  \
+  dividend%divisor);  \
+})
 
 enum {
   TYPE_I, TYPE_U, TYPE_S, TYPE_J, TYPE_B, TYPE__R,
@@ -113,7 +116,7 @@ static int decode_exec(Decode *s) {
   //M Extension
   INSTPAT("0000001 ????? ????? 000 ????? 01100 11", mul    , _R,R(rd) = src1 * src2);
   INSTPAT("0000001 ????? ????? 100 ????? 01100 11", div    , _R,R(rd) = _DIV((int32_t)src1, (int32_t)src2));
-
+  INSTPAT("0000001 ????? ????? 110 ????? 01100 11", rem    , _R,R(rd) = REM((int32_t)src1, (int32_t)src2));
 
   INSTPAT("0000000 00001 00000 000 00000 11100 11", ebreak , N, NEMUTRAP(s->pc, R(10))); // R(10) is $a0
   INSTPAT("??????? ????? ????? ??? ????? ????? ??", inv    , N, INV(s->pc));

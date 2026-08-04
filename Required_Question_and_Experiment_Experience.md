@@ -168,7 +168,7 @@ void putch(char ch) {
 
 ### 如何快速了解Makefile
 
-`make -n`或`make -nB`（**强制重建所有目标**）与`make --debug=v`结合使用（查看依赖分析过程以及所执行的命令）
+`make -n`或`make -nB`（**强制重建所有目标**）与`make --debug=v`结合使用（查看依赖分析过程以及所执行的命令），还可在`Makefile`文件中添加`$(info)`语句打印查看变量值（注意延迟展开的规则，见下文调试中遇到的bug）。
 
 `make --trace`
 
@@ -402,3 +402,9 @@ make ISA=$(ISA) run ARGS="$(NEMUFLAGS)" IMG=$(IMAGE).bin
 ```
 
 在`nemu`的`native.mk`中，`$(ARGS) $(IMG)`将作为参数传递给`$BINARY`(`/home/grant/Projects/PA/ysyx-workbench/nemu/build/riscv32-nemu-interpreter `)。**因此若要想以批处理模式运行NEMU，则可以在`$(NEMUFLAGS)`中添加`-b`选项。**
+
+
+
+#### 调试中遇到的bug：
+
+在利用`make -nB`查看输出的时候，发现构建`am-riscv32-nemu.a`目标时`$(OBJS)`为空，最后通过多个`$(info)`语句才搞清":"是延迟展开，即调用的时候再展开。而在定义处时，还未引入`riscv32-nemu.mk`相关文件，故`$(AM_SRCS)`、`$(SRCS)`、`$(OBJS)`均为空。而后面检查`$(ARCHIVE)`的依赖`$(OBJS)`时，已经引入了`riscv32-nemu.mk`相关文件，此时`$(AM_SRCS)`、`$(SRCS)`有了定义，故此时展开`$(OBJS)`便不为空。

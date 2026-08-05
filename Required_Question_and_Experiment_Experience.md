@@ -166,6 +166,21 @@ void putch(char ch) {
 
 ```
 
+
+
+| PA       | Linux PC                |
+| -------- | ----------------------- |
+| 硬件模块 | 硬件模块                |
+| ISA      | ISA                     |
+| AM       | glibc + Linux ABI       |
+| start.S  | crt1.o                  |
+| klib     | libc                    |
+| ioe      | system call             |
+| NEMU     | Linux kernel + hardware |
+| loader   | Linux ELF loader        |
+
+
+
 ### 如何快速了解Makefile
 
 `make -n`或`make -nB`（**强制重建所有目标**）与`make --debug=v`结合使用（查看依赖分析过程以及所执行的命令），还可在`Makefile`文件中添加`$(info)`语句打印查看变量值（注意延迟展开的规则，见下文调试中遇到的bug）。

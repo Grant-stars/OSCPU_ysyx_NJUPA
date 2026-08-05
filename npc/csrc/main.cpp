@@ -1,31 +1,51 @@
-#include "Vtop.h"
-#include <nvboard.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <assert.h>
 
-static TOP_NAME dut;
+#include "Vtop.h" 
+#include "verilated.h" 
+#include "verilated_fst_c.h"   //引入波形相关头文件
 
-void nvboard_bind_all_pins(TOP_NAME* top);
+static void single_cycle(Vtop* top, VerilatedFstC* tfp, VerilatedContext* contextp) {
+    top->clk = 0; top->eval(); 
+    tfp->dump(contextp->time());    //采样
+    contextp->timeInc(1);         // 时间+1
 
-static void single_cycle() {
-    dut.clk = 0; dut.eval();
-    dut.clk = 1; dut.eval();
+    top->clk = 1; top->eval(); 
+    tfp->dump(contextp->time());    //采样
+    contextp->timeInc(1);         // 时间+1
+
 }
 
-static void reset(int n) {
-    dut.rst = 1;
-    while (n -- > 0) single_cycle();
-    dut.rst = 0;
+static void reset(Vtop* top, VerilatedFstC* tfp, VerilatedContext* contextp, int n) {
+    top->rst = 1;
+    while (n -- > 0) single_cycle(top, tfp, contextp);
+    top->rst = 0;
 }
 
-int main(int argc, char** argv){
+int main(int argc, char** argv) {
 
-    nvboard_bind_all_pins(&dut);
-    nvboard_init();
+    //初始化仿真模型
+    VerilatedContext* contextp = new VerilatedContext;
+    contextp->commandArgs(argc, argv);
+    Vtop* top = new Vtop{contextp};
 
-    reset(10);
+    //初始化波形跟踪
+    contextp->traceEverOn(true);  //开启波形跟踪
+    VerilatedFstC* tfp = new VerilatedFstC; //创建一个 Verilator 提供的 FST 波形记录对象
+    top->trace(tfp, 99);    //采样深度99
+    tfp->open("build/wave.fst");  //打开波形文件
 
-    while (1) {
-        nvboard_update();
-        single_cycle();
+    //运行仿真
+    reset(top, tfp, contextp, 10);
+
+    while (1){ 
+        single_cycle(top, tfp, contextp);
     }
+
+    delete top;
+    delete contextp; 
+    tfp->close();   //关闭波形文件
+    delete tfp;  //  清理波形对象
     return 0;
 }

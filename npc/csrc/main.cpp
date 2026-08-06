@@ -33,6 +33,20 @@ uint8_t MEM[MEM_Maxsize];
 bool end;
 bool* end_ptr = &end;
 
+#define mem_halt 0x1218
+#define sum_halt 0x224
+
+void init(const char* path){
+    FILE* fp = fopen(path, "rb");
+    assert(fp);
+    int ret = fread(MEM, 1, MEM_Maxsize, fp);
+    if(ret == MEM_Maxsize){
+        printf("Insufficient MEM");
+    }
+    fclose(fp);
+    *(uint32_t*)(MEM+sum_halt)=0x00100073;
+}
+
 static void single_cycle(Vtop* top, VerilatedFstC* tfp, VerilatedContext* contextp) {
     top->clk = 0; top->eval(); 
     tfp->dump(contextp->time());    //采样
@@ -52,8 +66,6 @@ static void reset(Vtop* top, VerilatedFstC* tfp, VerilatedContext* contextp, int
 
 int main(int argc, char** argv) {
 
-
-
     //初始化仿真模型
     VerilatedContext* contextp = new VerilatedContext;
     contextp->commandArgs(argc, argv);
@@ -66,18 +78,18 @@ int main(int argc, char** argv) {
     tfp->open("build/wave.fst");  //打开波形文件
 
     //读取客户程序
-    memcpy(MEM, img, sizeof(img));
-    MEM[0x100]=0x78;
-    MEM[0x101]=0x56;
-    MEM[0x102]=0x34;
-    MEM[0x103]=0x12;
+    init("./bin/sum.bin");
+
     //运行仿真
     reset(top, tfp, contextp, 10);
     end = false;
     while (1){ 
         single_cycle(top, tfp, contextp);
+        printf("0x%.8x\n", top->inst);
         if(end) break;
     }
+
+    //检查a0寄存器
 
     delete top;
     delete contextp; 

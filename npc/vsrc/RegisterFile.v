@@ -21,6 +21,7 @@ module RegisterFile #(ADDR_WIDTH = 1, DATA_WIDTH = 1) (
     end
     else begin
       if(wen) rf[waddr] <= wdata;
+      //$display(rf[10]);
     end
   end
   assign rdata1 = rf[raddr1];

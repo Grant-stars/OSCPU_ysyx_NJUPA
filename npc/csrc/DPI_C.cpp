@@ -22,7 +22,6 @@ void pmem_write(int waddr, int wdata, char wmask) {
             break;
         case(0xf):
             *(uint32_t*)(MEM+(waddr & ~0x3u)) = (uint32_t)wdata;
-            printf("sw:%x\n", *(uint32_t*)(MEM+(waddr & ~0x3u)));
             break;
         default: assert(0);
         

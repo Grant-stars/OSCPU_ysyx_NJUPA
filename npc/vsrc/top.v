@@ -10,9 +10,6 @@ module top(
   output [31:0] inst
 ); 
 
-
-  
-
   //ebreak
   wire ebreak;
 
@@ -22,19 +19,6 @@ module top(
       finish();
     end
   end                                          
-
-  //IFU:
-  wire [1:0] jump;
-
-  inst_fetch IFU(
-    .rst(rst),
-    .clk(clk),
-    .data(outdata),
-    .jump(jump),
-    .pc(pc),
-    .inst(inst)
-  );
-
 
   //GPR：
   wire [31:0] rdata1, rdata2, wdata, outdata;
@@ -68,8 +52,17 @@ module top(
   );
 
 
-  //IFU: implemented by C++
+  //IFU:
+  wire [1:0] jump;
 
+  inst_fetch IFU(
+    .rst(rst),
+    .clk(clk),
+    .data(outdata),
+    .jump(jump),
+    .pc(pc),
+    .inst(inst)
+  );
 
 
   //IDU
@@ -127,10 +120,6 @@ module top(
     .valid(valid),
     .wen(sen)
   );
-
-
-
-
 
 
   //WBU

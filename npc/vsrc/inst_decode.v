@@ -18,7 +18,7 @@ module inst_decode(
 
 //parameter definition
 parameter [4:0] ALU_NOP = 0, ALU_ADD = 1;
-parameter [4:0] LS_NOP = 0, LS_LW = 3;
+parameter [4:0] LS_NOP = 0, LS_LW = 3, LS_LBU = 4;
 parameter [1:0] WB_ALU = 1, WB_MEM = 2, WB_PC = 3;
 parameter [1:0] JUMP_NOP = 0, JUMP_JALR = 1;
 
@@ -105,12 +105,19 @@ always@(*) begin
                     op2 = immI;
                     alu_op = ALU_ADD;
                     wen = 1;
-                    jump = 0;
                     wb_sel = WB_MEM;
                     ls_type = LS_LW;
                 end
 
-                
+                //lbu
+                3'b100:begin
+                    op1 = src1;
+                    op2 = immI;
+                    alu_op = ALU_ADD;
+                    wen = 1;
+                    wb_sel = WB_MEM;
+                    ls_type = LS_LBU;
+                end
 
                 default:begin
                     op1 = 0;

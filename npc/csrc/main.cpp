@@ -8,6 +8,7 @@
 
 
 static const uint32_t img [] = {
+    0x10002603,         //lw    a2, 0, 0x100
     0x0FFFF537,         //lui   a0, (0x0ffff000)
     0x00A505B3,         //add   a1,a0,a0
     0x00a50513,         //addi	a0,a0,10
@@ -47,6 +48,8 @@ static void reset(Vtop* top, VerilatedFstC* tfp, VerilatedContext* contextp, int
 
 int main(int argc, char** argv) {
 
+
+
     //初始化仿真模型
     VerilatedContext* contextp = new VerilatedContext;
     contextp->commandArgs(argc, argv);
@@ -60,6 +63,11 @@ int main(int argc, char** argv) {
 
     //读取客户程序
     memcpy(MEM, img, sizeof(img));
+    //测试：
+    MEM[0x100]=0x78;
+    MEM[0x101]=0x56;
+    MEM[0x102]=0x34;
+    MEM[0x103]=0x12;
 
     //运行仿真
     reset(top, tfp, contextp, 10);

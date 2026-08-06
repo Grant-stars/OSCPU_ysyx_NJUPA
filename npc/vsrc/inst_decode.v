@@ -110,6 +110,8 @@ always@(*) begin
                     ls_type = LS_LW;
                 end
 
+                
+
                 default:begin
                     op1 = 0;
                     op2 = 0;

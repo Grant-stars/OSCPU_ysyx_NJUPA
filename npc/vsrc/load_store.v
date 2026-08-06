@@ -17,7 +17,7 @@ module load_store(
     output reg valid,   //读写请求
     output reg wen          //写请求
 );
-    parameter [4:0] LS_LW = 3, LS_LBU = 4;;
+    parameter [4:0] LS_LW = 3, LS_LBU = 4, LS_SW=8;
     assign raddr_to_mem = raddr;
     assign waddr_to_mem = waddr;
 
@@ -40,6 +40,12 @@ module load_store(
             LS_LBU:begin
                 rdata_to_gpr = {24'b0,rdata_from_mem[7:0]};
                 valid = 1;
+            end
+
+            LS_SW:begin
+                valid = 1;
+                wen = 1;
+                wmask = 8'b00001111;
             end
 
             default:begin

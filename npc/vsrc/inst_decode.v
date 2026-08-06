@@ -18,7 +18,7 @@ module inst_decode(
 
 //parameter definition
 parameter [4:0] ALU_NOP = 0, ALU_ADD = 1;
-parameter [4:0] LS_NOP = 0, LS_LW = 3, LS_LBU = 4;
+parameter [4:0] LS_NOP = 0, LS_LW = 3, LS_LBU = 4, LS_SW = 8;
 parameter [1:0] WB_ALU = 1, WB_MEM = 2, WB_PC = 3;
 parameter [1:0] JUMP_NOP = 0, JUMP_JALR = 1;
 
@@ -29,6 +29,7 @@ wire [6:0] opcode;
 wire [2:0] funct3;
 wire [6:0] funct7;
 wire [31:0] immI;
+wire [31:0] immS;
 wire [31:0] immU;
 
 //data decode
@@ -44,7 +45,9 @@ assign raddr2 =rs2[`GPR_ADDR_WIDTH-1:0];
 assign src1 = rdata1;
 assign src2 = rdata2;
 assign immI = {{20{inst[31]}}, inst[31:20]};
+assign immS = {{20{inst[31]}}, inst[31:25], inst[11:7]};
 assign immU = {inst[31:12], 12'b0};
+
 
 //opcode decode
 always@(*) begin
@@ -127,6 +130,20 @@ always@(*) begin
                     jump = 0;
                     ls_type = LS_NOP;
                 end
+            endcase
+        end
+
+        7'b0100011:begin
+            case(funct3)
+                //sw
+                3'b010:begin
+                    op1 = src1;
+                    op2 = immS;
+                    alu_op = ALU_ADD;
+                    ls_type = LS_SW;
+                end
+
+                default: op1 = 0;
             endcase
         end
 

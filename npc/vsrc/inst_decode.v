@@ -38,15 +38,11 @@ assign opcode = inst[6:0];
 assign funct3 = inst[14:12];
 assign funct7 = inst[31:25];
 
-
 assign raddr1 =rs1[`GPR_ADDR_WIDTH-1:0];
 assign raddr2 =rs2[`GPR_ADDR_WIDTH-1:0];
 assign src1 = rdata1;
 assign src2 = rdata2;
 assign immI = {{20{inst[31]}}, inst[31:20]};
-
-//GPR
-
 
 //opcode decode
 always@(*) begin

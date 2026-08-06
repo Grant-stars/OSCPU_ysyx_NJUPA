@@ -1,26 +1,21 @@
 import "DPI-C" function void finish();
+import "DPI-C" function int pmem_read(input int raddr);
+import "DPI-C" function void pmem_write(
+    input int waddr, input int wdata, input byte wmask);
 `define GPR_ADDR_WIDTH 5
 module top(
   input clk,
   input rst,
-
-  //to C++ mem
-  input [31:0] inst,
-  output reg [31:0] pc,
-  output [31:0] addr,
-  output s_en,
-  output l_en,
-  output [31:0] s_data,
-  input [31:0] l_data,
-  output [2:0] len
+  output [31:0] pc,
+  output [31:0] inst
 ); 
 
 
-  wire [31:0] rdata1, rdata2, wdata, outdata;
-  wire [`GPR_ADDR_WIDTH-1:0] raddr1, raddr2, waddr;
-  wire w_en, ebreak;
+  
 
   //ebreak
+  wire ebreak;
+
   always @(*) begin                                        
     if(ebreak) begin
       $display("FINISH");
@@ -28,26 +23,24 @@ module top(
     end
   end                                          
 
-  //PC:
-  parameter [1:0] JUMP_NOP = 0, JUMP_JALR = 1;
+  //IFU:
   wire [1:0] jump;
-  reg [31:0] dnpc;
 
-  always@(*)begin
-    case(jump)
-      JUMP_NOP: dnpc = pc+4;
-      JUMP_JALR: dnpc = {outdata[31:1], 1'b0};
-      default: dnpc = pc+4;
-    endcase
-  end
-  always @(posedge clk)begin                                        
-    if(rst) pc<=32'b0;
-    else begin
-      pc<=dnpc;
-    end
-  end                                          
+  inst_fetch IFU(
+    .rst(rst),
+    .clk(clk),
+    .data(outdata),
+    .jump(jump),
+    .pc(pc),
+    .inst(inst)
+  );
+
 
   //GPR：
+  wire [31:0] rdata1, rdata2, wdata, outdata;
+  wire [`GPR_ADDR_WIDTH-1:0] raddr1, raddr2, waddr;
+  wire w_en;
+
   RegisterFile #(`GPR_ADDR_WIDTH, 32) GPR (
     .clk(clk),
     .rst(rst),
@@ -60,8 +53,24 @@ module top(
     .w_en(w_en)
   );
 
+  //MEM
+  wire [31:0] laddr, saddr, ldata, sdata;
+  wire [7:0] smask;
+  wire valid, sen;
+  memory MEM(
+    .valid(valid),
+    .wen(sen),
+    .raddr(laddr),
+    .rdata(ldata),
+    .waddr(saddr),
+    .wdata(sdata),
+    .wmask(smask)
+  );
+
 
   //IFU: implemented by C++
+
+
 
   //IDU
   wire [4:0] rd;
@@ -98,26 +107,38 @@ module top(
 
 
   //LSU: 
-  wire [31:0] l_data_to_gpr;
+  wire [31:0] ldata_to_gpr;
   load_store LSU(
     .ls_type(ls_type),
-    .addr(outdata),
-    .addr_to_mem(addr),
-    .l_data_from_mem(l_data),
-    .l_data_to_gpr(l_data_to_gpr),
-    .s_data_from_gpr(rdata2),
-    .s_data_to_mem(s_data),
-    .l_en(l_en),
-    .s_en(s_en),
-    .len(len)
+
+    .raddr(outdata),
+    .raddr_to_mem(laddr),
+
+    .waddr(outdata),
+    .waddr_to_mem(saddr),
+
+    .rdata_from_mem(ldata),
+    .rdata_to_gpr(ldata_to_gpr),
+
+    .wdata_from_gpr(rdata2),
+    .wdata_to_mem(sdata),
+
+    .wmask(smask),
+    .valid(valid),
+    .wen(sen)
   );
+
+
+
+
+
 
   //WBU
   writeback WBU(
     .w(w),
     .rd(rd),
     .data(outdata),
-    .l_data(l_data_to_gpr),
+    .l_data(ldata_to_gpr),
     .PC(pc),
     .wb_sel(wb_sel),
     .w_en(w_en),

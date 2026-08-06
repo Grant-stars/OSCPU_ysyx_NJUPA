@@ -9,61 +9,31 @@
 
 static const uint32_t img [] = {
     0x01400513,         //addi	a0,zero,20
+    0x00A505B3,         //add   a1,a0,a0
+    0x00a50513,         //addi	a0,a0,10
+    0x00100073,         //ebreak
+    /*
+    0x01400513,         //addi	a0,zero,20
     0x010000e7,         //jalr	ra,16(zero) # 10 <fun>
     0x00c000e7,         //jalr	ra,12(zero) # c <halt>
     0x00100073,         //ebreak
     0x00a50513,         //addi	a0,a0,10
     0x00008067,         //jalr	zero,0(ra)
+    */
 };
-
 
 #define MEM_Maxsize (1U<<30)
 uint8_t MEM[MEM_Maxsize];
-uint32_t pmem_read(uint32_t addr, int len){
-    switch (len){
-    case 1:
-        return (uint32_t)(*(uint8_t*)(MEM+addr));
-    case 2:
-        return (uint32_t)(*(uint16_t*)(MEM+addr));
-    case 4:
-        return (uint32_t)(*(uint32_t*)(MEM+addr));
-    default:
-        assert(0);
-        return 0;
-    }
-}
 
-void pmem_write(uint32_t addr, uint32_t data, int len){
-    switch (len)
-    {
-    case 1:
-        *(uint8_t*)(MEM+addr) = (uint8_t)data;
-        break;
-    case 2:
-        *(uint16_t*)(MEM+addr) = (uint16_t)data;
-        break;
-    case 4:
-        *(uint32_t*)(MEM+addr) = (uint32_t)data;
-        break;
-    default:
-        assert(0);
-    }
-    return ;
-}
-
-    bool end;
-    bool* end_ptr = &end;
+bool end;
+bool* end_ptr = &end;
 
 static void single_cycle(Vtop* top, VerilatedFstC* tfp, VerilatedContext* contextp) {
-    if(top->l_en) top->l_data=pmem_read(top->addr, top->len);
-    
     top->clk = 0; top->eval(); 
     tfp->dump(contextp->time());    //采样
     contextp->timeInc(1);         // 时间+1
 
     top->clk = 1; top->eval(); 
-    top->inst = pmem_read(top->pc, 4); top->eval(); 
-    if(top->s_en) pmem_write(top->addr, top->s_data, top->len);
     tfp->dump(contextp->time());    //采样
     contextp->timeInc(1);         // 时间+1
 }

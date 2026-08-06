@@ -5,6 +5,8 @@
 #include "Vtop.h" 
 #include "verilated.h" 
 #include "verilated_fst_c.h"   //引入波形相关头文件
+#define CAT(a, b)  a ## b
+#define PRINT_REG(n) printf("  reg[%d]:0x%.8x\n",n, top->CAT(rf,n))
 
 
 static const uint32_t img [] = {
@@ -85,7 +87,24 @@ int main(int argc, char** argv) {
     end = false;
     while (1){ 
         single_cycle(top, tfp, contextp);
-        printf("0x%.8x\n", top->inst);
+            printf("pc 0x%.8x: 0x%.8x\n", top->pc, top->inst);
+PRINT_REG(0);
+PRINT_REG(1);
+PRINT_REG(2);
+PRINT_REG(3);
+PRINT_REG(4);
+PRINT_REG(5);
+PRINT_REG(6);
+PRINT_REG(7);
+PRINT_REG(8);
+PRINT_REG(9);
+PRINT_REG(10);
+PRINT_REG(11);
+PRINT_REG(12);
+PRINT_REG(13);
+PRINT_REG(14);
+PRINT_REG(15);
+printf("50FD5: 0x%.8x\n", *(uint32_t*)(MEM+0x50FD5));
         if(end) break;
     }
 

@@ -8,7 +8,7 @@
 
 
 static const uint32_t img [] = {
-    0x01400513,         //addi	a0,zero,20
+    0x0FFFF537,         //lui   a0, (0x0ffff000)
     0x00A505B3,         //add   a1,a0,a0
     0x00a50513,         //addi	a0,a0,10
     0x00100073,         //ebreak

@@ -29,6 +29,7 @@ wire [6:0] opcode;
 wire [2:0] funct3;
 wire [6:0] funct7;
 wire [31:0] immI;
+wire [31:0] immU;
 
 //data decode
 assign rs1 = inst[19:15];
@@ -43,6 +44,7 @@ assign raddr2 =rs2[`GPR_ADDR_WIDTH-1:0];
 assign src1 = rdata1;
 assign src2 = rdata2;
 assign immI = {{20{inst[31]}}, inst[31:20]};
+assign immU = {inst[31:12], 12'b0};
 
 //opcode decode
 always@(*) begin
@@ -58,6 +60,17 @@ always@(*) begin
     ls_type = LS_NOP;
 
     case(opcode)
+        //lui
+        //此处实现为immU+0
+        7'b0110111:begin
+            op1 = 0;
+            op2 = immU;
+            alu_op = ALU_ADD;
+            wen = 1;
+            wb_sel = WB_ALU;
+        end
+
+
         //Integer Register-Immediate Instructions
         7'b0010011:begin
             case(funct3)

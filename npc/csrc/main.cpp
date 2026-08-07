@@ -10,11 +10,15 @@
 
 
 static const uint32_t img [] = {
-    0x0FFFF537,         //lui   a0, (0x0ffff000)
-    0x10002603,         //lw    a2, 0, 0x100
-    0x10A00023,          //sb a0, 0, 0x100
+    0x00300513,          //addi a0,zero,3
+    //0x0FFFF537,       //lui   a0, (0x0ffff000)
+
+    0x10054603,         //lbu a2, a0, 0x100
+    0x00200513,         //addi a0,zero,2
+    0x10C50023,         //sb a2 a0 0x100
+    0x10002603,       //lw    a2, 0, 0x100
+    0x10A00023,         //sb a0, 0, 0x100
     //0x10A02023,       //sw a0, 0, 0x100
-    //0x10004603,       //lbu a2, 0, 0x100
     0x10002603,         //lw    a2, 0, 0x100
     0x00A505B3,         //add   a1,a0,a0
     0x00a50513,         //addi	a0,a0,10
@@ -46,7 +50,7 @@ void init(const char* path){
         printf("Insufficient MEM");
     }
     fclose(fp);
-    *(uint32_t*)(MEM+sum_halt)=0x00100073;
+    *(uint32_t*)(MEM+mem_halt)=0x00100073;
 }
 
 static void single_cycle(Vtop* top, VerilatedFstC* tfp, VerilatedContext* contextp) {
@@ -80,8 +84,14 @@ int main(int argc, char** argv) {
     tfp->open("build/wave.fst");  //打开波形文件
 
     //读取客户程序
-    init("./bin/sum.bin");
-
+    init("./bin/mem.bin");
+    /*
+    memcpy(MEM, img, sizeof(img));
+    MEM[0x100]=0x78;
+    MEM[0x101]=0x56;
+    MEM[0x102]=0x34;
+    MEM[0x103]=0x12;
+    */
     //运行仿真
     reset(top, tfp, contextp, 10);
     end = false;
@@ -104,7 +114,6 @@ PRINT_REG(12);
 PRINT_REG(13);
 PRINT_REG(14);
 PRINT_REG(15);
-printf("50FD5: 0x%.8x\n", *(uint32_t*)(MEM+0x50FD5));
         if(end) break;
     }
 

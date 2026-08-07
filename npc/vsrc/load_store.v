@@ -38,14 +38,28 @@ module load_store(
                 valid = 1;
             end
             LS_LBU:begin
-                rdata_to_gpr = {24'b0,rdata_from_mem[7:0]};
+                case(raddr[1:0])
+                    2'b00: rdata_to_gpr = {24'b0,rdata_from_mem[7:0]};
+                    2'b01: rdata_to_gpr = {24'b0,rdata_from_mem[15:8]};
+                    2'b10: rdata_to_gpr = {24'b0,rdata_from_mem[23:16]};
+                    2'b11: rdata_to_gpr = {24'b0,rdata_from_mem[31:24]};
+                endcase
                 valid = 1;
             end
+
+            //pmem_write()总是往地址为`waddr & ~0x3u`的4字节按写掩码`wmask`写入`wdata`
+            //故此处data需根据指令类型以及地址低两位做搬移
 
             LS_SB:begin
                 valid = 1;
                 wen = 1;
-                wmask = 8'b00000001;
+                wdata_to_mem = {4{wdata_from_gpr[7:0]}};
+                case(waddr_to_mem[1:0])
+                    2'b00: wmask = 8'b00000001;
+                    2'b01: wmask = 8'b00000010;
+                    2'b10: wmask = 8'b00000100;
+                    2'b11: wmask = 8'b00001000;
+                endcase
             end
 
             LS_SW:begin

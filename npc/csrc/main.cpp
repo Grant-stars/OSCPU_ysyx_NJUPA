@@ -97,27 +97,29 @@ int main(int argc, char** argv) {
     end = false;
     while (1){ 
         single_cycle(top, tfp, contextp);
-            printf("pc 0x%.8x: 0x%.8x\n", top->pc, top->inst);
-PRINT_REG(0);
-PRINT_REG(1);
-PRINT_REG(2);
-PRINT_REG(3);
-PRINT_REG(4);
-PRINT_REG(5);
-PRINT_REG(6);
-PRINT_REG(7);
-PRINT_REG(8);
-PRINT_REG(9);
-PRINT_REG(10);
-PRINT_REG(11);
-PRINT_REG(12);
-PRINT_REG(13);
-PRINT_REG(14);
-PRINT_REG(15);
+        /*
+        printf("pc 0x%.8x: 0x%.8x\n", top->pc, top->inst);
+        PRINT_REG(0);
+        PRINT_REG(1);
+        PRINT_REG(2);
+        PRINT_REG(3);
+        PRINT_REG(4);
+        PRINT_REG(5);
+        PRINT_REG(6);
+        PRINT_REG(7);
+        PRINT_REG(8);
+        PRINT_REG(9);
+        PRINT_REG(10);
+        PRINT_REG(11);
+        PRINT_REG(12);
+        PRINT_REG(13);
+        PRINT_REG(14);
+        PRINT_REG(15);
+        */
         if(end) break;
     }
 
-    //检查a0寄存器
+
 
     delete top;
     delete contextp; 

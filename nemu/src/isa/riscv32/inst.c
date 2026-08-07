@@ -35,13 +35,22 @@
 
 #define MULH(src1, src2)  ({ (src1*src2) >> 32;})
 
-#define _DIV(dividend, divisor) ({ (!divisor)?-1:  \
+#define _DIV(dividend, divisor) ({ (divisor == 0)?-1:  \
   ((dividend==INT32_MIN && divisor==-1)?INT32_MIN:  \
   dividend/divisor);  \
 })
-#define REM(dividend, divisor) ({ (!divisor)?dividend:  \
+
+#define _DIVU(dividend, divisor) ({ (divisor == 0)?0xffffffff:   \
+  (dividend/divisor);  \
+})
+
+#define REM(dividend, divisor) ({ (divisor == 0)?dividend:  \
   ((dividend==INT32_MIN && divisor==-1)?0:  \
   dividend%divisor);  \
+})
+
+#define REMU(dividend, divisor) ({ (divisor == 0)?dividend:  \
+  (dividend%divisor);  \
 })
 
 enum {
@@ -126,9 +135,9 @@ static int decode_exec(Decode *s) {
   INSTPAT("0000001 ????? ????? 000 ????? 01100 11", mul    , _R,R(rd) = src1 * src2);
   INSTPAT("0000001 ????? ????? 001 ????? 01100 11", mulh   , _R,R(rd) = MULH((int64_t)(int32_t)src1, (int64_t)(int32_t)src2));
   INSTPAT("0000001 ????? ????? 100 ????? 01100 11", div    , _R,R(rd) = _DIV((int32_t)src1, (int32_t)src2));
-  INSTPAT("0000001 ????? ????? 101 ????? 01100 11", divu   , _R,R(rd) = _DIV((uint32_t)src1, (uint32_t)src2));
+  INSTPAT("0000001 ????? ????? 101 ????? 01100 11", divu   , _R,R(rd) = _DIVU((uint32_t)src1, (uint32_t)src2));
   INSTPAT("0000001 ????? ????? 110 ????? 01100 11", rem    , _R,R(rd) = REM((int32_t)src1, (int32_t)src2));
-  INSTPAT("0000001 ????? ????? 111 ????? 01100 11", remu   , _R,R(rd) = REM((uint32_t)src1, (uint32_t)src2));
+  INSTPAT("0000001 ????? ????? 111 ????? 01100 11", remu   , _R,R(rd) = REMU((uint32_t)src1, (uint32_t)src2));
 
   INSTPAT("0000000 00001 00000 000 00000 11100 11", ebreak , N, NEMUTRAP(s->pc, R(10))); // R(10) is $a0
   INSTPAT("??????? ????? ????? ??? ????? ????? ??", inv    , N, INV(s->pc));

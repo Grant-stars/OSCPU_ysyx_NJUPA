@@ -7,6 +7,9 @@ module inst_fetch(
     output reg [31:0] inst
 );
     parameter [1:0] JUMP_NOP = 0, JUMP_JALR = 1, JUMP_JAL =2;
+    initial begin
+        pc = 32'h80000000;
+    end
 
     reg [31:0] dnpc;
     always@(*)begin

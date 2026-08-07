@@ -52,7 +52,6 @@ void init(const char* path){
         printf("Insufficient MEM");
     }
     fclose(fp);
-    *(uint32_t*)(MEM+mem_halt)=0x00100073;
 }
 
 static void single_cycle(Vtop* top, VerilatedFstC* tfp, VerilatedContext* contextp) {

@@ -5,7 +5,8 @@ CHECKFLAGS = --lint-only -Wall
 TOPNAME = top
 VERILATOR = verilator
 VERILATOR_CFLAGS += -MMD --build -cc  \
-				-O3 --x-assign fast --x-initial fast --noassert -Wall
+				-O3 --x-assign fast --x-initial fast --noassert -Wall	\
+				--CFLAGS "-ggdb -O0"
 
 BUILD_DIR = ./build
 OBJ_DIR = $(BUILD_DIR)/obj_dir
@@ -66,6 +67,7 @@ run: $(BIN)
 all: 
 	@echo "Write this Makefile by your self."
 
+
 sim: $(VSRCS) $(CSRCS) $(NVBOARD_ARCHIVE)
 	$(call git_commit, "sim RTL") # DO NOT REMOVE THIS LINE!!!
 	@echo "Write this Makefile by your self."
@@ -73,7 +75,7 @@ sim: $(VSRCS) $(CSRCS) $(NVBOARD_ARCHIVE)
 		--top-module $(TOPNAME) $^ \
 		$(addprefix -CFLAGS , $(CXXFLAGS)) $(addprefix -LDFLAGS , $(LDFLAGS)) \
 		--Mdir $(OBJ_DIR) --exe -o $(abspath $(BIN))
-	$(BIN)
+	$(BIN) $(IMG)
 
 
 

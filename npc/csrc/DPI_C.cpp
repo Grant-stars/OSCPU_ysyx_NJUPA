@@ -4,6 +4,8 @@
 #include <stdio.h>
 extern uint8_t MEM[];
 extern bool* end_ptr;
+#define CONFIG_MBASE 0x80000000
+
 
 #define SHIFTMASK(n) ({ (wmask >> n)&(0x1u)? (0b11111111)<<(n*8) : 0x0; })
 #define MASK(wmask) ({ SHIFTMASK(0) | SHIFTMASK(1) | SHIFTMASK(2) | SHIFTMASK(3); })
@@ -11,7 +13,7 @@ extern bool* end_ptr;
 
 int pmem_read(int raddr) {
     // 总是读取地址为`raddr & ~0x3u`的4字节返回
-    return *(int*)(MEM+(raddr & ~0x3u));
+    return *(int*)(MEM+(raddr & ~0x3u)-CONFIG_MBASE);
 }
 void pmem_write(int waddr, int wdata, char wmask) {
     // 总是往地址为`waddr & ~0x3u`的4字节按写掩码`wmask`写入`wdata`
@@ -20,7 +22,7 @@ void pmem_write(int waddr, int wdata, char wmask) {
     uint32_t raw_data = pmem_read(waddr);
     uint32_t mask = MASK(wmask);
     uint32_t new_data = ((uint32_t)wdata & mask) | (raw_data & (~mask));
-    *(uint32_t*)(MEM+(waddr & ~0x3u)) = new_data;
+    *(uint32_t*)(MEM+(waddr & ~0x3u)-CONFIG_MBASE) = new_data;
     return ;
 }
 

@@ -19,7 +19,7 @@ module inst_fetch(
     end
 
     always @(posedge clk)begin                                        
-        if(rst) pc<=32'b0;
+        if(rst) pc<=32'h80000000;
         else begin
             pc<=dnpc;
         end

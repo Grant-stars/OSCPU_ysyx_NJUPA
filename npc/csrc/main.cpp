@@ -33,8 +33,10 @@ static const uint32_t img [] = {
     */
 };
 
-#define MEM_Maxsize (1U<<30)
-uint8_t MEM[MEM_Maxsize];
+#define CONFIG_MSIZE (1U<<30)
+#define CONFIG_MBASE 0x80000000
+
+uint8_t MEM[CONFIG_MSIZE];
 
 bool end;
 bool* end_ptr = &end;
@@ -45,8 +47,8 @@ bool* end_ptr = &end;
 void init(const char* path){
     FILE* fp = fopen(path, "rb");
     assert(fp);
-    int ret = fread(MEM, 1, MEM_Maxsize, fp);
-    if(ret == MEM_Maxsize){
+    int ret = fread(MEM, 1, CONFIG_MSIZE, fp);
+    if(ret == CONFIG_MSIZE){
         printf("Insufficient MEM");
     }
     fclose(fp);
@@ -84,7 +86,8 @@ int main(int argc, char** argv) {
     tfp->open("build/wave.fst");  //打开波形文件
 
     //读取客户程序
-    init("./bin/mem.bin");
+    init(argv[1]);
+
     /*
     memcpy(MEM, img, sizeof(img));
     MEM[0x100]=0x78;
@@ -92,6 +95,7 @@ int main(int argc, char** argv) {
     MEM[0x102]=0x34;
     MEM[0x103]=0x12;
     */
+
     //运行仿真
     reset(top, tfp, contextp, 10);
     end = false;

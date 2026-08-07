@@ -1,19 +1,12 @@
-VERILATOR = verilator
-BUILD_DIR = obj_dir
-VTOP = $(BUILD_DIR)/Vtop
 WAVE_FORMAT = fst
 WAVE_FILE = wave.$(WAVE_FORMAT)
 CHECKFLAGS = --lint-only -Wall
 
-# NVBOARD makefile
-
 TOPNAME = top
-NXDC_FILES = constr/top.nxdc
-INC_PATH ?=  ../nvboard/usr/include
-
 VERILATOR = verilator
 VERILATOR_CFLAGS += -MMD --build -cc  \
-				-O3 --x-assign fast --x-initial fast --noassert
+				-O3 --x-assign fast --x-initial fast --noassert -Wall	\
+				--CFLAGS "-ggdb -O0"
 
 BUILD_DIR = ./build
 OBJ_DIR = $(BUILD_DIR)/obj_dir
@@ -32,14 +25,28 @@ $(SRC_AUTO_BIND): $(NXDC_FILES)
 # project source
 VSRCS = $(shell find $(abspath ./vsrc) -name "*.v")
 CSRCS = $(shell find $(abspath ./csrc) -name "*.c" -or -name "*.cc" -or -name "*.cpp")
-CSRCS += $(SRC_AUTO_BIND)
 
-# rules for NVBoard
-include $(NVBOARD_HOME)/scripts/nvboard.mk
 
 # rules for verilator
 INCFLAGS = $(addprefix -I , $(INC_PATH))
 CXXFLAGS += $(INCFLAGS) -DTOP_NAME="\"V$(TOPNAME)\""
+
+# 如果启用NVBoard， 需传入NVBOARD=1
+NVBOARD?=
+ifneq ($(NVBOARD),)
+  $(info # Enable NVBoard)
+  NXDC_FILES = constr/top.nxdc
+  INC_PATH ?=  ../nvboard/usr/include
+  # rules for NVBoard
+  include $(NVBOARD_HOME)/scripts/nvboard.mk
+  CSRCS += $(SRC_AUTO_BIND)
+  CSRCS:=$(filter-out %main.cpp, $(CSRCS))
+
+else
+  $(info # Disable NVBoard)
+  CSRCS:=$(filter-out %main_nvboard.cpp, $(CSRCS))
+endif
+
 
 $(BIN): $(VSRCS) $(CSRCS) $(NVBOARD_ARCHIVE)
 	@rm -rf $(OBJ_DIR)
@@ -57,22 +64,26 @@ run: $(BIN)
 	@$^
 
 
-all:
+all: 
 	@echo "Write this Makefile by your self."
 
-sim:
+
+sim: $(VSRCS) $(CSRCS) $(NVBOARD_ARCHIVE)
 	$(call git_commit, "sim RTL") # DO NOT REMOVE THIS LINE!!!
-	@echo "Write this Makefile by your self."
-	$(VERILATOR) --cc --exe --build -j 0 -Wall --trace-$(WAVE_FORMAT) ./csrc/main.cpp ./vsrc/top.v --Mdir $(BUILD_DIR)
-	./$(VTOP)
-	gtkwave $(WAVE_FILE)
+	$(VERILATOR) $(VERILATOR_CFLAGS) --trace-$(WAVE_FORMAT) \
+		--top-module $(TOPNAME) $^ \
+		$(addprefix -CFLAGS , $(CXXFLAGS)) $(addprefix -LDFLAGS , $(LDFLAGS)) \
+		--Mdir $(OBJ_DIR) --exe -o $(abspath $(BIN))
+	$(BIN) $(IMG)
+
+
 
 check: $(VSRCS)
 	$(VERILATOR) $(CHECKFLAGS) $(VSRCS) 
 
 clean:
-	rm -r ./$(BUILD_DIR)
-	rm wave.*
+	rm -rf ./$(BUILD_DIR)
+	rm -f wave.*
 
 .PHONY: all sim clean  default run check
 

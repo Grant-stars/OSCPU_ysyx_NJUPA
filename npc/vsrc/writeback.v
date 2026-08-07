@@ -1,0 +1,27 @@
+`define GPR_ADDR_WIDTH 5
+module writeback(
+    input w,
+    input [4:0] rd,
+    input [31:0] data,
+    input [31:0] l_data,
+    input [31:0] PC,
+    input [1:0] wb_sel,
+    output w_en,
+    output [`GPR_ADDR_WIDTH-1:0] waddr,
+    output reg [31:0] wdata
+);
+
+    parameter [1:0] WB_ALU = 1, WB_MEM = 2, WB_PC = 3;
+
+    assign w_en = w;
+    assign waddr = rd[`GPR_ADDR_WIDTH-1:0];
+    always @(*)begin                                        
+        case(wb_sel)
+            WB_ALU: wdata = data;
+            WB_MEM: wdata = l_data;
+            WB_PC: wdata = PC+4;
+            default: wdata = 0;
+        endcase
+    end                                          
+
+endmodule

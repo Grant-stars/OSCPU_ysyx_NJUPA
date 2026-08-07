@@ -8,7 +8,6 @@
 #define CAT(a, b)  a ## b
 #define PRINT_REG(n) printf("  reg[%d]:0x%.8x\n",n, top->CAT(rf,n))
 
-
 static const uint32_t img [] = {
     0x00300513,          //addi a0,zero,3
     //0x0FFFF537,       //lui   a0, (0x0ffff000)
@@ -98,6 +97,7 @@ int main(int argc, char** argv) {
     //运行仿真
     reset(top, tfp, contextp, 10);
     end = false;
+    int good = 0;
     while (1){ 
         single_cycle(top, tfp, contextp);
         /*
@@ -119,7 +119,17 @@ int main(int argc, char** argv) {
         PRINT_REG(14);
         PRINT_REG(15);
         */
-        if(end) break;
+        if(end){
+            good = (top->rf10 == 0);
+            if(good){
+                printf("HIT GOOD TRAP\n");
+            }
+            else{
+                printf("HIT BAD TRAP\n");
+            }
+            break; 
+        }  
+        
     }
 
 
@@ -128,5 +138,5 @@ int main(int argc, char** argv) {
     delete contextp; 
     tfp->close();   //关闭波形文件
     delete tfp;  //  清理波形对象
-    return 0;
+    return (!good);
 }

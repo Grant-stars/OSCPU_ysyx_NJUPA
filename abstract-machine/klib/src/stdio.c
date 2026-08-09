@@ -24,13 +24,13 @@ static inline void scan_options(const char** fmt){
   PTR_MOVE(SP, 1);  \
 } while(0)
 
-#define P_PUTPUT_STR(src) do{  \
+#define P_OUTPUT_STR(src) do{  \
   char* p = src;  \
-  while(p!='\0'){ \
+  while(*p!='\0'){ \
     putch(*p);  \
     p++;  \
   } \
-  PTR_MOVE(p-src);  \
+  PTR_MOVE(P, p-src);  \
 } while(0)
 
 #define P_OUTPUT_CHAR(src) do{ \
@@ -68,20 +68,29 @@ static inline void scan_options(const char** fmt){
 } while(0)
 
 
-size_t int_to_str(char* s, int d){
+size_t int_to_str(char* s, int d_int){
   char stack[25];
   int top=0;
   size_t len = 0;
+  unsigned int d_uint;
   //123, -456
-  if(d<0){
-    d=-d;
+  if(d_int<0){
+    if(d_int==0x80000000){
+      d_uint = (unsigned int)d_int;
+    }
+    else{
+      d_uint = -d_int;
+    }
     *s='-';
     s++;
   }
+  else{
+    d_uint = d_int;
+  }
   //123,456
-  while(d!=0){
-    stack[top]=(d%10)+'1'-1;
-    d=d/10;
+  while(d_uint!=0){
+    stack[top]=(d_uint%10)+'1'-1;
+    d_uint=d_uint/10;
     top++;
   }
   if(top==0){
@@ -101,6 +110,16 @@ size_t int_to_str(char* s, int d){
   }
 }
 
+int printf(const char *fmt, ...) {
+  va_list ap;
+  int d;
+  char* s;
+  int count =0;
+  va_start(ap, fmt);
+  parse_fmt(P);
+  va_end(ap);
+  return count;
+}
 
 int vsprintf(char *out, const char *fmt, va_list ap) {
   panic("Not implemented");

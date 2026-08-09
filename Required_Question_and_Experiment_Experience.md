@@ -423,3 +423,82 @@ make ISA=$(ISA) run ARGS="$(NEMUFLAGS)" IMG=$(IMAGE).bin
 #### 调试中遇到的bug：
 
 在利用`make -nB`查看输出的时候，发现构建`am-riscv32-nemu.a`目标时`$(OBJS)`为空，最后通过多个`$(info)`语句才搞清":"是延迟展开，即调用的时候再展开。而在定义处时，还未引入`riscv32-nemu.mk`相关文件，故`$(AM_SRCS)`、`$(SRCS)`、`$(OBJS)`均为空。而后面检查`$(ARCHIVE)`的依赖`$(OBJS)`时，已经引入了`riscv32-nemu.mk`相关文件，此时`$(AM_SRCS)`、`$(SRCS)`有了定义，故此时展开`$(OBJS)`便不为空。
+
+
+
+### mainargs传递方式
+
+-  在`riscv32-nemu`中，有
+
+  ```c
+  
+  #define STRINGIFY(s)        #s
+  #define TOSTRING(s)         STRINGIFY(s)
+  ...
+  static const char mainargs[MAINARGS_MAX_LEN] = TOSTRING(MAINARGS_PLACEHOLDER); // defined in CFLAGS
+  ...
+  int ret = main(mainargs);
+  ...
+  MAINARGS_MAX_LEN = 64
+  MAINARGS_PLACEHOLDER = the_insert-arg_rule_in_Makefile_will_insert_mainargs_here
+  CFLAGS += -DMAINARGS_MAX_LEN=$(MAINARGS_MAX_LEN) -DMAINARGS_PLACEHOLDER=$(MAINARGS_PLACEHOLDER)
+  ```
+
+  由此编译好的程序就有`main`函数接受了`mainargs = "the_insert-arg_rule_in_Makefile_will_insert_mainargs_here"`的参数。随后在`nemu.mk`文件中的`insert-arg:`目标下调用`python`脚本：
+
+  ```python
+  #!/usr/bin/env python3
+  
+  from sys import argv
+  
+  bin = argv[1]
+  max_len = int(argv[2])
+  placeholder = argv[3]
+  mainargs = argv[4]
+  
+  if len(mainargs) >= max_len:
+      print("Error: mainargs should not be longer than {0} bytes\n".format(max_len))
+      exit(1)
+  print("mainargs={0}".format(mainargs))
+  
+  fp = open(bin, 'r+b')
+  data = fp.read()
+  idx = data.find(str.encode(placeholder))
+  if idx == -1:
+      print("Error: placeholder not found!\n")
+      exit(1)
+  fp.seek(idx)
+  mainargs_pad = str.encode(mainargs) + ((max_len - len(mainargs)) * str.encode("\0"))
+  if len(mainargs_pad) != max_len:
+      print("Error: len(mainargs_pad) != max_len\n")
+      exit(1)
+  fp.write(mainargs_pad)
+  fp.close()
+  
+  ```
+
+  找到二进制文件中字符串`"the_insert-arg_rule_in_Makefile_will_insert_mainargs_here"`的位置，将其替换成传入的`mainargs`字符串（若未传入则全替换成`'\0'`），由此实现了`mainargs`参数从`make`到C程序的传递。
+
+- 在`native`中，`abstract-machine/am/src/native/platform.c`中有
+
+  ```c
+    const char *args = getenv("mainargs");
+    halt(main(args ? args : "")); // call main here!
+  ```
+
+  `getenv`函数能获取指定环境变量的值（如果不存在则返回NULL）。在执行`make`指令的时候，传入`mainargs=xxx`的参数，而根据`make`手册：
+
+  ```text
+  When make runs a recipe, some variables defined in the makefile are placed into the environment of each command make invokes. By default, only variables that came from the make’s environment or set on its command line are placed into the environment of the commands. 
+  ```
+
+  变量`mainargs`属于命令行传入，故会放进`make`规则下所调用的每一条命令的（进程）环境变量里面，故`getenv("mainargs")`能成功获取其值。
+
+
+
+
+
+
+
+
+

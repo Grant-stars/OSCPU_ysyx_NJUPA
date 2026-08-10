@@ -4,6 +4,9 @@
 
 #if !defined(__ISA_NATIVE__) || defined(__NATIVE_USE_KLIB__)
 static unsigned long int next = 1;
+extern char _heap_start;
+extern Area heap;
+void* addr = (void*)&_heap_start;
 
 int rand(void) {
   // RAND_MAX assumed to be 32767
@@ -34,7 +37,13 @@ void *malloc(size_t size) {
   // Therefore do not call panic() here, else it will yield a dead recursion:
   //   panic() -> putchar() -> (glibc) -> malloc() -> panic()
 #if !(defined(__ISA_NATIVE__) && defined(__NATIVE_USE_KLIB__))
-  panic("Not implemented");
+  if(size==0) return NULL;
+  else{
+    void* start = addr;
+    addr = (((uintptr_t)addr + size)& 0x3) == 0 ? (addr + size) : addr+size+0x4-(((uintptr_t)addr + size)& 0x3);
+    if(addr>heap.end) return NULL;
+    return start;
+  } 
 #endif
   return NULL;
 }

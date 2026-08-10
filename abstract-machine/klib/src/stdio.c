@@ -8,7 +8,7 @@
 #define CONSUME_PERCENT(p) ((p)++)
 //handle options in format
 static inline void scan_options(const char** fmt){
-  while((**fmt!='s') && (**fmt!='d')){ 
+  while((**fmt!='s') && (**fmt!='d') && (**fmt!='c') && (**fmt!='x') && (**fmt!='X')){ 
     (*fmt)++; 
   }
 }
@@ -60,6 +60,12 @@ static inline void scan_options(const char** fmt){
             char str_d[25];  \
             int_to_str(str_d, d); \
             OUTPUT(func, str_d, STR, ##__VA_ARGS__);  \
+            break;  \
+          case 'c': \
+            c = (char)va_arg(ap, int); \
+            OUTPUT(func, c, CHAR, ##__VA_ARGS__); \
+            break;  \
+          case 'x': case 'X':printf("%%x todo ..."); fmt++; break;  \
         } \
       } \
     } \
@@ -114,6 +120,7 @@ int printf(const char *fmt, ...) {
   va_list ap;
   int d;
   char* s;
+  char c;
   int count =0;
   va_start(ap, fmt);
   parse_fmt(P);
@@ -129,6 +136,7 @@ int sprintf(char *out, const char *fmt, ...) {
   va_list ap;
   int d;
   char* s;
+  char c;
   int count =0;
   //"I have %d %s", 4, "apples"
   va_start(ap, fmt);

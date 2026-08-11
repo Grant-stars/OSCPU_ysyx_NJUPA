@@ -6,6 +6,9 @@
 #if !defined(__ISA_NATIVE__) || defined(__NATIVE_USE_KLIB__)
 
 #define CONSUME_PERCENT(p) ((p)++)
+
+char hexstrbuf[]="0123456789abcdef";
+
 //handle options in format
 static inline void scan_options(const char** fmt){
   while((**fmt!='s') && (**fmt!='d') && (**fmt!='c') && (**fmt!='x') && (**fmt!='X')){ 
@@ -65,7 +68,12 @@ static inline void scan_options(const char** fmt){
             c = (char)va_arg(ap, int); \
             OUTPUT(func, c, CHAR, ##__VA_ARGS__); \
             break;  \
-          case 'x': case 'X':printf("%%x todo ..."); fmt++; break;  \
+          case 'x': case 'X': \
+            d = va_arg(ap, int);  \
+            char str_x[17]; \
+            int_to_hex_str(str_x, d); \
+            OUTPUT(func, str_x, STR, ##__VA_ARGS__); \
+            break;  \
         } \
       } \
     } \
@@ -115,6 +123,26 @@ size_t int_to_str(char* s, int d_int){
     return len;
   }
 }
+
+size_t int_to_hex_str(char* s, int d_int){
+  uint32_t d_hex = (uint32_t)d_int;
+  char stack[17];
+  int top = 0;
+  do{
+    stack[top]=hexstrbuf[d_hex%16];
+    top++;
+    d_hex=d_hex/16;
+  }while(d_hex!=0);
+  size_t len = top;
+  top--;
+  while(top>=0){
+    s[len-top-1] = stack[top];
+    top--;
+  }
+  s[len] = '\0';
+  return len;
+}
+
 
 int printf(const char *fmt, ...) {
   va_list ap;

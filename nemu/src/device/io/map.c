@@ -19,6 +19,7 @@
 #include <device/map.h>
 
 #define IO_SPACE_MAX (32 * 1024 * 1024)
+extern uint64_t device_access;
 
 static uint8_t *io_space = NULL;
 static uint8_t *p_space = NULL;
@@ -52,10 +53,14 @@ void init_map() {
   p_space = io_space;
 }
 
+//可以使用DTRACE_COND来实现条件控制功能（例如追踪指定设备的访问），需要在Kconfig将其值设为条件语句（默认为"true"）,Makefile中会将DTRACE_COND定义为宏
+//更改之后需清除nemu编译结果后重新编译
 word_t map_read(paddr_t addr, int len, IOMap *map) {
-  //可以使用DTRACE_COND来实现条件控制功能，需要在Kconfig将其值设为条件语句（默认为"true"）,Makefile中会将DTRACE_COND定义为宏
   #ifdef CONFIG_DTRACE
-    log_write("device read %s from memory[%.8x, %.8x] access: addr=%.8x, len=%d\n", map->name, map->low, map->high, addr, len);
+    if(DTRACE_COND){
+      log_write("device read %s from memory[%.8x, %.8x] access: addr=%.8x, len=%d\n", map->name, map->low, map->high, addr, len);
+      device_access++;
+    }
   #endif
   assert(len >= 1 && len <= 8);
   check_bound(map, addr);
@@ -67,7 +72,10 @@ word_t map_read(paddr_t addr, int len, IOMap *map) {
 
 void map_write(paddr_t addr, int len, word_t data, IOMap *map) {
   #ifdef CONFIG_DTRACE
-    log_write("device write %s from memory[0x%.8x, 0x%.8x] access: addr=0x%.8x, len=%d, data=%d(0x  %.8x)\n", map->name, map->low, map->high, addr, len, data, data);
+    if(DTRACE_COND){
+      log_write("device write %s from memory[0x%.8x, 0x%.8x] access: addr=0x%.8x, len=%d, data=%d(0x  %.8x)\n", map->name, map->low, map->high, addr, len, data, data);
+      device_access++;
+    }
   #endif
   assert(len >= 1 && len <= 8);
   check_bound(map, addr);

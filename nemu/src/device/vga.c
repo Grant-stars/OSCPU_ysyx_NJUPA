@@ -19,6 +19,8 @@
 #define SCREEN_W (MUXDEF(CONFIG_VGA_SIZE_800x600, 800, 400))
 #define SCREEN_H (MUXDEF(CONFIG_VGA_SIZE_800x600, 600, 300))
 
+uint32_t sync = 0;
+
 static uint32_t screen_width() {
   return MUXDEF(CONFIG_TARGET_AM, io_read(AM_GPU_CONFIG).width, SCREEN_W);
 }
@@ -71,18 +73,38 @@ static inline void update_screen() {
 #endif
 #endif
 
+static void vga_ctl_io_handler(uint32_t offset, int len, bool is_write){
+  // 负责给出屏幕大小以及接受同步信息
+  assert(offset == 0 || offset==4);
+  // w<<16 | h 拼接成32位数
+  if(offset == 0){
+    assert(!is_write);
+    vgactl_port_base[0] = screen_width()<<16 | screen_height();
+  }
+  //读取是否sync
+  else if(offset == 4){
+    sync = vgactl_port_base[1];
+  }
+}
+
 void vga_update_screen() {
   // TODO: call `update_screen()` when the sync register is non-zero,
   // then zero out the sync register
+  if(sync){
+    update_screen();
+    sync = 0;
+  }
 }
 
+// AM访问VGACTL_ADDR和SYNC_ADDR对应init_vga()里
+// 第一次add_mmio_map注册的8字节空间
 void init_vga() {
   vgactl_port_base = (uint32_t *)new_space(8);
   vgactl_port_base[0] = (screen_width() << 16) | screen_height();
 #ifdef CONFIG_HAS_PORT_IO
   add_pio_map ("vgactl", CONFIG_VGA_CTL_PORT, vgactl_port_base, 8, NULL);
 #else
-  add_mmio_map("vgactl", CONFIG_VGA_CTL_MMIO, vgactl_port_base, 8, NULL);
+  add_mmio_map("vgactl", CONFIG_VGA_CTL_MMIO, vgactl_port_base, 8, vga_ctl_io_handler);
 #endif
 
   vmem = new_space(screen_size());

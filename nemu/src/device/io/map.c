@@ -56,6 +56,7 @@ void init_map() {
 //可以使用DTRACE_COND来实现条件控制功能（例如追踪指定设备的访问），需要在Kconfig将其值设为条件语句（默认为"true"）,Makefile中会将DTRACE_COND定义为宏
 //更改之后需清除nemu编译结果后重新编译
 word_t map_read(paddr_t addr, int len, IOMap *map) {
+  Assert(map, "Map is NULL!");
   #ifdef CONFIG_DTRACE
     if(DTRACE_COND){
       log_write("device read %s from memory[%.8x, %.8x] access: addr=%.8x, len=%d\n", map->name, map->low, map->high, addr, len);
@@ -71,6 +72,7 @@ word_t map_read(paddr_t addr, int len, IOMap *map) {
 }
 
 void map_write(paddr_t addr, int len, word_t data, IOMap *map) {
+  Assert(map, "Map is NULL!");
   #ifdef CONFIG_DTRACE
     if(DTRACE_COND){
       log_write("device write %s from memory[0x%.8x, 0x%.8x] access: addr=0x%.8x, len=%d, data=%d(0x  %.8x)\n", map->name, map->low, map->high, addr, len, data, data);

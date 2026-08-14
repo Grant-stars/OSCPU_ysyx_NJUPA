@@ -18,6 +18,59 @@
 #include <cpu/ifetch.h>
 #include <cpu/decode.h>
 
+
+// iringbuf
+#ifdef CONFIG_ITRACE
+#define IRINGBUF_LEN 16
+typedef struct instinfo{
+  vaddr_t pc;
+  uint32_t inst;  
+  char logbuf[128];
+  } instinfo;
+instinfo iringbuf[IRINGBUF_LEN];  
+int head_inst = 0;
+
+void w_iringbuf(vaddr_t pc, uint32_t inst){
+  iringbuf[head_inst].pc = pc;
+  iringbuf[head_inst].inst = inst; 
+  head_inst = (head_inst+1) % IRINGBUF_LEN;
+}
+
+void out_iringbuf(){
+  printf("\n");
+  printf("iringbuf:\n");
+
+  for(int i=0; i<IRINGBUF_LEN; i++){
+    if((i+1)%IRINGBUF_LEN == head_inst){
+      printf("--> ");
+    }
+    else{
+      printf("    ");
+    }
+
+    char *p = iringbuf[i].logbuf;
+    p += snprintf(p, sizeof(iringbuf[i].logbuf), FMT_WORD ":", iringbuf[i].pc);
+    int ilen =4; 
+    int j;
+    uint8_t *inst = (uint8_t *)&iringbuf[i].inst;
+    for (j = ilen - 1; j >= 0; j --) {
+      p += snprintf(p, 4, " %02x", inst[j]);
+    }
+    *p = ' ';
+    p++;  
+    void disassemble(char *str, int size, uint64_t pc, uint8_t *code, int nbyte);
+    disassemble(p, iringbuf[i].logbuf + sizeof(iringbuf[i].logbuf) - p,
+      iringbuf[i].pc, (uint8_t *)&iringbuf[i].inst, ilen);
+    
+    printf("%s\n", iringbuf[i].logbuf);
+  }
+  printf("\n");
+}
+#endif
+
+
+
+
 #define R(i) gpr(i)
 #define Mr vaddr_read
 #define Mw vaddr_write
@@ -155,5 +208,8 @@ static int decode_exec(Decode *s) {
 
 int isa_exec_once(Decode *s) {
   s->isa.inst = inst_fetch(&s->snpc, 4);
+#ifdef CONFIG_ITRACE
+  w_iringbuf(s->pc, s->isa.inst);
+#endif
   return decode_exec(s);
 }

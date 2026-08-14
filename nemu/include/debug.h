@@ -20,6 +20,10 @@
 #include <stdio.h>
 #include <utils.h>
 
+#ifdef CONFIG_ITRACE
+void out_iringbuf(); 
+#endif
+
 #define Log(format, ...) \
     _Log(ANSI_FMT("[%s:%d %s] " format, ANSI_FG_BLUE) "\n", \
         __FILE__, __LINE__, __func__, ## __VA_ARGS__)
@@ -32,11 +36,15 @@
       IFNDEF(CONFIG_TARGET_AM, extern FILE* log_fp; fflush(log_fp)); \
       extern void assert_fail_msg(); \
       assert_fail_msg(); \
+      MUXDEF(CONFIG_ITRACE, out_iringbuf();, )	\
       assert(cond); \
     } \
   } while (0)
 
-#define panic(format, ...) Assert(0, format, ## __VA_ARGS__)
+#define panic(format, ...) do{  \
+      MUXDEF(CONFIG_ITRACE, out_iringbuf();, )	\
+      Assert(0, format, ## __VA_ARGS__);  \
+     } while(0);
 
 #define TODO() panic("please implement me")
 

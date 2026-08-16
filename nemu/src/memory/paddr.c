@@ -17,7 +17,9 @@
 #include <memory/paddr.h>
 #include <device/mmio.h>
 #include <isa.h>
+#include <stdint.h>
 
+extern uint64_t memory_access;
 #if   defined(CONFIG_PMEM_MALLOC)
 static uint8_t *pmem = NULL;
 #else // CONFIG_PMEM_GARRAY
@@ -51,6 +53,12 @@ void init_mem() {
 }
 
 word_t paddr_read(paddr_t addr, int len) {
+  #ifdef CONFIG_MTRACE
+    if(MTRACE_COND){
+      log_write("memory read to memory: 0x%.8x with len=%d\n", addr, len); 
+      memory_access++;
+	}
+  #endif
   if (likely(in_pmem(addr))) return pmem_read(addr, len);
   IFDEF(CONFIG_DEVICE, return mmio_read(addr, len));
   out_of_bound(addr);
@@ -58,7 +66,13 @@ word_t paddr_read(paddr_t addr, int len) {
 }
 
 void paddr_write(paddr_t addr, int len, word_t data) {
-  if (likely(in_pmem(addr))) { pmem_write(addr, len, data); return; }
+ #ifdef CONFIG_MTRACE
+    if(MTRACE_COND){
+      log_write("memory write to memory: 0x%.8x with len=%d, data=0x%.8x)\n", addr, len, data); 
+      memory_access++;
+	}
+  #endif
+ if (likely(in_pmem(addr))) { pmem_write(addr, len, data); return; }
   IFDEF(CONFIG_DEVICE, mmio_write(addr, len, data); return);
   out_of_bound(addr);
 }

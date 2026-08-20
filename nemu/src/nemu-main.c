@@ -22,6 +22,7 @@ void init_monitor(int, char *[]);
 void am_init_monitor();
 void engine_start();
 int is_exit_status_bad();
+void free_elf_table();
 
 //Test expr
 #ifdef CONFIG_EXPR_TEST
@@ -54,6 +55,6 @@ int main(int argc, char *argv[]) {
 
   /* Start engine. */
   engine_start();
-
+  IFDEF(CONFIG_FTRACE, free_elf_table());
   return is_exit_status_bad();
 }

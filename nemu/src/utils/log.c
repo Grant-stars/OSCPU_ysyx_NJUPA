@@ -17,9 +17,11 @@
 
 #define DTRACE_NUM 10000
 #define MTRACE_NUM 10000 
+#define FTRACE_NUM 10000
 extern uint64_t g_nr_guest_inst;
 uint64_t device_access = 0;
 uint64_t memory_access = 0;
+uint64_t function_trace = 0;
 
 #ifndef CONFIG_TARGET_AM
 FILE *log_fp = NULL;
@@ -37,6 +39,6 @@ void init_log(const char *log_file) {
 bool log_enable() {
   return MUXDEF(CONFIG_TRACE, ((g_nr_guest_inst >= CONFIG_TRACE_START) &&
         (g_nr_guest_inst <= CONFIG_TRACE_END)) || device_access <=DTRACE_NUM ||
-			memory_access <=MTRACE_NUM, false);
+			memory_access <=MTRACE_NUM || function_trace <=FTRACE_NUM, false);
 }
 #endif

@@ -16,9 +16,10 @@
 #include <isa.h>
 #include <cpu/difftest.h>
 #include "../local-include/reg.h"
+bool checkregs(CPU_state *ref_r, vaddr_t pc);
 
 bool isa_difftest_checkregs(CPU_state *ref_r, vaddr_t pc) {
-  return false;
+	return checkregs(ref_r, pc);
 }
 
 void isa_difftest_attach() {

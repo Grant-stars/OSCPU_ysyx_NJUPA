@@ -30,6 +30,8 @@ CSRCS = $(shell find $(abspath ./csrc) -name "*.c" -or -name "*.cc" -or -name "*
 # rules for verilator
 INCFLAGS = $(addprefix -I , $(INC_PATH))
 CXXFLAGS += $(INCFLAGS) -DTOP_NAME="\"V$(TOPNAME)\""
+LDFLAGS += -lreadline
+
 
 # 如果启用NVBoard， 需传入NVBOARD=1
 NVBOARD?=

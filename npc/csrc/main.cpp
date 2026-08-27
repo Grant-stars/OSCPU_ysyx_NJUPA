@@ -8,6 +8,7 @@
 #include "Vtop.h" 
 #include "Vtop_top.h" 
 #include "Vtop_RegisterFile__A5.h"
+#include "Vtop_inst_decode.h"
 #include "verilated.h" 
 #include "verilated_fst_c.h"   //引入波形相关头文件
 							   
@@ -27,6 +28,8 @@ void init_monitor(int argc, char *argv[]);
 void sdb_mainloop(); 
 bool scan_wp();
 void disasm(uint32_t pc, uint32_t instruction);
+void free_elf_table();
+void func_check(int jump, int rs1, int rd, uint32_t pc, uint32_t npc);
 
 const char *regs[] = {
   "$0", "ra", "sp", "gp", "tp", "t0", "t1", "t2",
@@ -68,6 +71,9 @@ void trace_and_difftest(uint32_t pc, uint32_t inst){
 	disasm(pc, inst);
 	log_write("%s\n", log_buf); 
 	if(g_print_step) {puts(log_buf);} 
+#endif
+#ifdef CONFIG_FTRACE
+	func_check(top->top->IDU->jump, top->top->IDU->rs1, top->top->IDU->rd, pc, top->pc);
 #endif
 }
 
@@ -150,6 +156,7 @@ int main(int argc, char** argv) {
     end = false;
 	sdb_mainloop();
 
+	IFDEF(CONFIG_FTRACE, free_elf_table());
     delete top;
     delete contextp; 
     tfp->close();   //关闭波形文件

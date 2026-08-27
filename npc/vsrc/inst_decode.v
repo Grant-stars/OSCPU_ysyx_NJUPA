@@ -3,14 +3,14 @@ module inst_decode(
     input [31:0] inst,
     input [31:0] rdata1,
     input [31:0] rdata2,
-    output [4:0] rd,
+    output [4:0] rd /*verilator public*/,
     output reg [31:0] op1,
     output reg [31:0] op2,
     output [`GPR_ADDR_WIDTH-1:0] raddr1,
     output [`GPR_ADDR_WIDTH-1:0] raddr2,
     output reg [4:0] alu_op,
     output reg [4:0] ls_type,
-    output reg [1:0] jump,
+    output reg [1:0] jump /*verilator public*/,
     output reg [1:0] wb_sel,
     output reg ebreak,
     output reg wen
@@ -20,10 +20,10 @@ module inst_decode(
 parameter [4:0] ALU_NOP = 0, ALU_ADD = 1;
 parameter [4:0] LS_NOP = 0, LS_LW = 3, LS_LBU = 4, LS_SB = 6, LS_SW = 8;
 parameter [1:0] WB_ALU = 1, WB_MEM = 2, WB_PC = 3;
-parameter [1:0] JUMP_NOP = 0, JUMP_JALR = 1;
+parameter [1:0] JUMP_NOP = 0, JUMP_JALR = 1;  //注：添加JUMP_JAL时mian.cpp里ftrace也需要同步修改
 
 //sign definition
-wire [4:0] rs1, rs2;
+wire [4:0] rs1 /*verilator public*/, rs2;
 wire [31:0] src1, src2;
 wire [6:0] opcode;
 wire [2:0] funct3;
@@ -33,7 +33,7 @@ wire [31:0] immS;
 wire [31:0] immU;
 
 //data decode
-assign rs1 = inst[19:15];
+assign rs1 = inst[19:15] ;
 assign rs2 = inst[24:20];
 assign rd = inst[11:7];
 assign opcode = inst[6:0];

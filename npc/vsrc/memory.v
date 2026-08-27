@@ -1,4 +1,5 @@
 module memory(
+	input clk,
     input valid,
     input wen,
     input [31:0] raddr,
@@ -8,14 +9,17 @@ module memory(
     input [7:0] wmask
 );
     always @(*)begin
-        if(valid)begin
+        if(valid && (~wen))begin
             rdata = pmem_read(raddr);
-            if(wen) begin
-                pmem_write(waddr, wdata, wmask);
-            end
         end
         else begin
             rdata = 0;
         end
     end
+
+	always @(posedge clk)begin
+		if(valid && wen)begin
+            pmem_write(waddr, wdata, wmask);
+		end
+	end	
 endmodule

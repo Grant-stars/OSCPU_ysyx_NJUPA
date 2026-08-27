@@ -42,6 +42,7 @@ module top(
   wire [7:0] smask;
   wire valid, sen;
   memory MEM(
+	.clk(clk),
     .valid(valid),
     .wen(sen),
     .raddr(laddr),

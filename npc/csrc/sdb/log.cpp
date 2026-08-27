@@ -37,8 +37,8 @@ void init_log(const char *log_file) {
 }
 
 bool log_enable() {
-  return MUXDEF(CONFIG_TRACE, ((g_nr_guest_inst >= CONFIG_TRACE_START) &&
-        (g_nr_guest_inst <= CONFIG_TRACE_END)) || device_access <=DTRACE_NUM ||
+  return MUXDEF(CONFIG_TRACE, ((g_nr_guest_inst >= 0) &&
+        (g_nr_guest_inst <= 10000)) || device_access <=DTRACE_NUM ||
 			memory_access <=MTRACE_NUM || function_trace <=FTRACE_NUM, false);
 }
 #endif

@@ -18,11 +18,15 @@ VerilatedFstC* tfp = new VerilatedFstC; //创建一个 Verilator 提供的 FST �
 bool end;
 bool* end_ptr = &end;
 int good = 0;
+bool g_print_step = false;
+
+uint64_t g_nr_guest_inst = 0;
+extern char log_buf[128];
 
 void init_monitor(int argc, char *argv[]);
 void sdb_mainloop(); 
 bool scan_wp();
-
+void disasm(uint32_t pc, uint32_t instruction);
 
 const char *regs[] = {
   "$0", "ra", "sp", "gp", "tp", "t0", "t1", "t2",
@@ -59,6 +63,15 @@ void reg_display(){
   
 }
 
+void trace_and_difftest(uint32_t pc, uint32_t inst){
+#ifdef CONFIG_ITRACE
+	disasm(pc, inst);
+	log_write("%s\n", log_buf); 
+	if(g_print_step) {puts(log_buf);} 
+#endif
+}
+
+
 static void single_cycle() {
     top->clk = 0; top->eval(); 
     tfp->dump(contextp->time());    //采样
@@ -78,7 +91,11 @@ static void reset(int n) {
 
 
 int exec_once(){
+	uint32_t trace_pc=top->pc;
+	uint32_t trace_inst=top->inst;
 	single_cycle();
+	g_nr_guest_inst++;
+	trace_and_difftest(trace_pc, trace_inst);
     if(end){
 		good = (top->top->GPR->rf[10] == 0);
 		if(good){
@@ -102,8 +119,8 @@ int exec_once(){
 }
 
 
-
 void cpu_exec(uint64_t n){
+	g_print_step = (n < 10);
 	while(n-->0){
 		if(exec_once()){
 			break;

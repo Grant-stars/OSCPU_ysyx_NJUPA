@@ -19,6 +19,7 @@ extern uint8_t MEM[CONFIG_MSIZE];
 
 static const uint32_t img [] = {
     0x00300513,          //addi a0,zero,3
+    0x00300513,          //addi a0,zero,3
     //0x0FFFF537,       //lui   a0, (0x0ffff000)
 
     0x10054603,         //lbu a2, a0, 0x100
@@ -48,7 +49,7 @@ void init_log(const char *log_file);
 void init_elf(const char* elf_file);
 // void init_difftest(char *ref_so_file, long img_size, int port);
 void init_sdb();
-// void init_disasm();
+void init_disasm();
 
 #include <getopt.h>
 
@@ -137,11 +138,12 @@ void init_monitor(int argc, char *argv[]) {
   /* Initialize differential testing. */
   //init_difftest(diff_so_file, img_size, difftest_port);
 
+  /* Initialize disasm. */
+  IFDEF(CONFIG_ITRACE, init_disasm());
 
   /* Initialize the simple debugger. */
   init_sdb();
 
-  IFDEF(CONFIG_ITRACE, init_disasm());
 
 }
 

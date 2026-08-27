@@ -33,6 +33,12 @@ CXXFLAGS += $(INCFLAGS) -DTOP_NAME="\"V$(TOPNAME)\""
 LDFLAGS += -lreadline
 
 
+#rules for capstone
+CAPSTONE_INC=$(abspath csrc/tools/capstone/repo/include)
+CXXFLAGS += -I$(CAPSTONE_INC)
+CAPSTONE_SO=$(abspath csrc/tools/capstone/repo/libcapstone.so.5)
+CXXFLAGS += -DCAPSTONE_SO_PATH=\"$(CAPSTONE_SO)\"
+
 # 如果启用NVBoard， 需传入NVBOARD=1
 NVBOARD?=
 ifneq ($(NVBOARD),)
@@ -69,6 +75,7 @@ run: $(BIN)
 all: 
 	@echo "Write this Makefile by your self."
 
+NPC_EXEC := $(BIN) $(ARGS) $(IMG) 
 
 sim: $(VSRCS) $(CSRCS) $(NVBOARD_ARCHIVE)
 	$(call git_commit, "sim RTL") # DO NOT REMOVE THIS LINE!!!
@@ -76,7 +83,7 @@ sim: $(VSRCS) $(CSRCS) $(NVBOARD_ARCHIVE)
 		--top-module $(TOPNAME) $^ \
 		$(addprefix -CFLAGS , $(CXXFLAGS)) $(addprefix -LDFLAGS , $(LDFLAGS)) \
 		--Mdir $(OBJ_DIR) --exe -o $(abspath $(BIN))
-	$(BIN) $(IMG)
+	$(NPC_EXEC)
 
 
 

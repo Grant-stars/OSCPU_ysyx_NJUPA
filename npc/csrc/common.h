@@ -15,6 +15,7 @@ typedef uint32_t word_t;
 //#define CONFIG_FTRACE
 //#define CONFIG_DTRACE
 //#define CONFIG_ITRACE
+//#define CONFIG_WATCHPOINT
 
 
 #endif

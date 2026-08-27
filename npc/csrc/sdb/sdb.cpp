@@ -28,9 +28,10 @@ void init_regex();
 void reg_display();
 uint32_t vaddr_read(uint32_t addr);
 word_t expr(char *e, bool *success);
-
-// void init_wp_pool();
-// void wp_display();
+void init_wp_pool();
+void wp_display();
+int new_wp(char* s);
+bool free_wp(int number);
 
 /* We use the `readline' library to provide more flexibility to read from stdin. */
 static char* rl_gets() {
@@ -80,11 +81,9 @@ static int cmd_info(char *args) {
   else if(*args=='r' && *(args+1)=='\0'){
     reg_display();
   }
-  /*
   else if(*args=='w' && *(args+1)=='\0'){
     wp_display();
   }
-  */
   else {
     printf("Invalid info args!\n");
   }
@@ -142,22 +141,22 @@ static int cmd_p(char *args) {
 }
 
 static int cmd_w(char *args) {
-	/*
   if(args==NULL){
     printf("Argument required for w\n");
     return 0;
   }
+#ifndef CONFIG_WATCHPOINT
+  printf("Please open watchpoint!\n");
+#else
   int number = new_wp(args);
   if(number!=-1){
     printf("Watchpoint %d: %s\n", number, args);
   }
-  */
-  printf("TODO\n");
+#endif
   return 0;
 }
 
 static int cmd_d(char *args) {
-	/*
   if(args==NULL){
     printf("Argument required for d\n");
     return 0;
@@ -175,8 +174,6 @@ static int cmd_d(char *args) {
       printf("Deleted watchpoint %d\n", number);
     }
   }
-  */
-	printf("TODO\n");
   return 0;
 }
 
@@ -270,6 +267,6 @@ void init_sdb() {
   init_regex();
 
   /* Initialize the watchpoint pool. */
-  // init_wp_pool();
+  init_wp_pool();
  //
  }

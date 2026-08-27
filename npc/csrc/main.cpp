@@ -3,6 +3,7 @@
 #include <assert.h>
 #include <stdint.h>
 #include <inttypes.h>
+#include "common.h"
 
 #include "Vtop.h" 
 #include "Vtop_top.h" 
@@ -20,6 +21,7 @@ int good = 0;
 
 void init_monitor(int argc, char *argv[]);
 void sdb_mainloop(); 
+bool scan_wp();
 
 
 const char *regs[] = {
@@ -77,19 +79,26 @@ static void reset(int n) {
 
 int exec_once(){
 	single_cycle();
-        if(end){
-            good = (top->top->GPR->rf[10] == 0);
-            if(good){
-                printf("HIT GOOD TRAP\n");
-            }
-            else{
-                printf("HIT BAD TRAP\n");
-            }
-            return 1; 
-        }
-		else{
-			return 0;
+    if(end){
+		good = (top->top->GPR->rf[10] == 0);
+		if(good){
+			printf("HIT GOOD TRAP\n");
 		}
+		else{
+			printf("HIT BAD TRAP\n");
+		}
+        return 1; 
+	}
+	else{
+		#ifdef CONFIG_WATCHPOINT
+			bool trigger = scan_wp();
+			if(trigger){
+				printf("Program stopped at: 0x%.8x\n", top->pc);
+				return 1;
+			}
+		#endif
+		return 0;
+	}
 }
 
 

@@ -1,9 +1,11 @@
 #include <stdio.h>
-#include <stdlib.h>
+#include <string.h>
 #include <assert.h>
 #include <stdint.h>
 
 #include "Vtop.h" 
+#include "Vtop_top.h" 
+#include "Vtop_RegisterFile__A5.h"
 #include "verilated.h" 
 #include "verilated_fst_c.h"   //引入波形相关头文件
 							   
@@ -15,11 +17,36 @@ bool end;
 bool* end_ptr = &end;
 int good = 0;
 
-#define mem_halt 0x1218
-#define sum_halt 0x224
-
 void init_monitor(int argc, char *argv[]);
 void sdb_mainloop(); 
+
+
+const char *regs[] = {
+  "$0", "ra", "sp", "gp", "tp", "t0", "t1", "t2",
+  "s0", "s1", "a0", "a1", "a2", "a3", "a4", "a5",
+  "a6", "a7", "s2", "s3", "s4", "s5", "s6", "s7",
+  "s8", "s9", "s10", "s11", "t3", "t4", "t5", "t6"
+};
+
+uint32_t reg_read(const char *s, bool *success){
+  if(!strcmp(s,"0")){
+    *success = true;
+    return top->top->GPR->rf[0];
+  }
+  else if(!strcmp(s,"pc")){
+    *success = true;
+    return top->pc;    
+  }
+  for(int i=1; i<32; i++){
+    if(!strcmp(s,regs[i])){
+      *success = true;
+      return top->top->GPR->rf[i];
+    }
+  }
+  *success=false;
+  return 0;
+}
+
 
 static void single_cycle() {
     top->clk = 0; top->eval(); 
@@ -42,7 +69,7 @@ static void reset(int n) {
 int exec_once(){
 	single_cycle();
         if(end){
-            good = (top->rf10 == 0);
+            good = (top->top->GPR->rf[10] == 0);
             if(good){
                 printf("HIT GOOD TRAP\n");
             }

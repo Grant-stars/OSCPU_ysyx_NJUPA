@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <time.h>
 #include <sys/time.h>
+#include <stdint.h>
 extern uint8_t MEM[];
 extern bool* end_ptr;
 #define CONFIG_MBASE      0x80000000
@@ -16,8 +17,12 @@ extern bool* end_ptr;
 #define SHIFTMASK(n) ({ (wmask >> n)&(0x1u)? (0b11111111)<<(n*8) : 0x0; })
 #define MASK(wmask) ({ SHIFTMASK(0) | SHIFTMASK(1) | SHIFTMASK(2) | SHIFTMASK(3); })
 
-static struct tm local_time;
 
+
+uint32_t vaddr_read(uint32_t addr);
+void vaddr_write(int waddr, int wdata, char wmask);
+
+static struct tm local_time;
 uint64_t boot_time = 0;
 
 void get_local_time(){
@@ -75,8 +80,9 @@ int pmem_read(volatile int raddr) {
 
     return *(int*)(MEM+(raddr & ~0x3u)-CONFIG_MBASE);
 }
+
 void pmem_write(int waddr, int wdata, char wmask) {
-    // 总是往地址为`waddr & ~0x3u`的4字节按写掩码`wmask`写入`wdata`
+	// 总是往地址为`waddr & ~0x3u`的4字节按写掩码`wmask`写入`wdata`
     // `wmask`中每比特表示`wdata`中1个字节的掩码,
     // 如`wmask = 0x3`代表只写入最低2个字节, 内存中的其它字节保持不变 
 

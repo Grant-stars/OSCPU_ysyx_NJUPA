@@ -19,8 +19,15 @@
  */
 #include "../common.h"
 #include <regex.h>
+#include <stdint.h>
 #include <string.h>
 #include <ctype.h>
+
+extern uint8_t MEM[];
+
+uint32_t vaddr_read(uint32_t addr);
+uint32_t reg_read(const char *s, bool *success);
+
 
 #define TOKENSLENTH 65535
 
@@ -208,7 +215,7 @@ word_t eval(int p, int q, bool* success){
       return strtoul(tokens[p].str, NULL, 16);
     }
     else if(tokens[p].type == TK_REG){
-      word_t ret = isa_reg_str2val((tokens[p].str)+1, success);
+      word_t ret = reg_read((tokens[p].str)+1, success);
       if(*success==false){
         return false;
       }
@@ -250,7 +257,7 @@ word_t eval(int p, int q, bool* success){
         case TK_EQ: return (val1==val2);
         case TK_NEQ: return (val1!=val2);
         case TK_AND: return (val1&&val2);
-        case TK_DEREF: return (vaddr_read(val2,4));
+        case TK_DEREF: return (vaddr_read(val2));
         default: assert(0);
     }
   }

@@ -15,11 +15,11 @@
 
 #include <readline/readline.h>
 #include <readline/history.h>
+#include <stdint.h>
 #include "../common.h"
 #include "Vtop.h" 
 #include "verilated.h" 
 #include "verilated_fst_c.h"   //引入波形相关头文件
-
 
 static int is_batch_mode = false;
 void cpu_exec(uint64_t n);
@@ -93,6 +93,7 @@ static int cmd_info(char *args) {
 }
 
 static int cmd_x(char *args) {
+	/*
   if(args==NULL){
     printf("Argument required (num of outpupt and starting display address)\n");
   }
@@ -277,4 +278,5 @@ void init_sdb() {
 
   /* Initialize the watchpoint pool. */
   // init_wp_pool();
- //}
+ //
+ }

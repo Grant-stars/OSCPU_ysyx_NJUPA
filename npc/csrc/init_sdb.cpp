@@ -15,7 +15,7 @@
 #include <stdio.h>
 #include "common.h"
 
-uint8_t MEM[CONFIG_MSIZE];
+extern uint8_t MEM[CONFIG_MSIZE];
 
 static const uint32_t img [] = {
     0x00300513,          //addi a0,zero,3

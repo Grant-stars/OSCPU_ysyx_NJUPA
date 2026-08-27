@@ -7,24 +7,8 @@ module top(
   input clk,
   input rst,
   output [31:0] pc,
-  output [31:0] inst,
-  output [31:0] rf0,
-  output [31:0] rf1,
-  output [31:0] rf2,
-  output [31:0] rf3,
-  output [31:0] rf4,
-  output [31:0] rf5,
-  output [31:0] rf6,
-  output [31:0] rf7,
-  output [31:0] rf8,
-  output [31:0] rf9,
-  output [31:0] rf10,
-  output [31:0] rf11,
-  output [31:0] rf12,
-  output [31:0] rf13,
-  output [31:0] rf14,
-  output [31:0] rf15
-); 
+  output [31:0] inst
+  ); 
 
   //ebreak
   wire ebreak;
@@ -50,25 +34,8 @@ module top(
     .raddr2(raddr2), 
     .wdata(wdata),
     .waddr(waddr),
-    .w_en(w_en),
-    .rf0(rf0),
-    .rf1(rf1),
-    .rf2(rf2),
-    .rf3(rf3),
-    .rf4(rf4),
-    .rf5(rf5),
-    .rf6(rf6),
-    .rf7(rf7),
-    .rf8(rf8),
-    .rf9(rf9),
-    .rf10(rf10),
-    .rf11(rf11),
-    .rf12(rf12),
-    .rf13(rf13),
-    .rf14(rf14),
-    .rf15(rf15)
-
-  );
+    .w_en(w_en)
+     );
 
   //MEM
   wire [31:0] laddr, saddr, ldata, sdata;

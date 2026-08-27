@@ -25,6 +25,10 @@ static int is_batch_mode = false;
 void cpu_exec(uint64_t n);
 
 void init_regex();
+void reg_display();
+uint32_t vaddr_read(uint32_t addr);
+word_t expr(char *e, bool *success);
+
 // void init_wp_pool();
 // void wp_display();
 
@@ -37,7 +41,7 @@ static char* rl_gets() {
     line_read = NULL;
   }
 
-  line_read = readline("(nemu) ");
+  line_read = readline("(npc) ");
 
   if (line_read && *line_read) {
     add_history(line_read);
@@ -52,11 +56,7 @@ static int cmd_c(char *args) {
 }
 
 static int cmd_q(char *args) {
-	/*
-  nemu_state.state = NEMU_QUIT;
-  */
-	printf("TODO\n");
-  return -1;
+	return -1;
 }
 
 static int cmd_si(char *args) {
@@ -74,26 +74,24 @@ static int cmd_si(char *args) {
 }
 
 static int cmd_info(char *args) {
-	/*
   if(args==NULL){
     printf("Argument required for info\n");
   }
   else if(*args=='r' && *(args+1)=='\0'){
-    isa_reg_display();
+    reg_display();
   }
+  /*
   else if(*args=='w' && *(args+1)=='\0'){
     wp_display();
   }
+  */
   else {
     printf("Invalid info args!\n");
   }
-	*/
-  printf("TODO\n");
   return 0;
 }
 
 static int cmd_x(char *args) {
-	/*
   if(args==NULL){
     printf("Argument required (num of outpupt and starting display address)\n");
   }
@@ -119,18 +117,15 @@ static int cmd_x(char *args) {
         for(int i=0;i<N;i++){
             char buf[32];
             sprintf(buf,"0x%X:",(start_addr+4*i));
-            printf("%-12s0x%.8X\n",buf, vaddr_read((start_addr+4*i), 4));
+            printf("%-12s0x%.8X\n",buf, vaddr_read((start_addr+4*i)));
         }
       }
     }
   }
-  */
-  printf("TODO\n");
   return 0;
 }
 
 static int cmd_p(char *args) {
-	/*
   if(args==NULL){
     printf("Argument required for p\n");
     return 0;
@@ -143,8 +138,6 @@ static int cmd_p(char *args) {
   else{
     printf("%s = %u (0x%x)\n",args, value, value);
   }
-  */
-  printf("TODO\n");
   return 0;
 }
 

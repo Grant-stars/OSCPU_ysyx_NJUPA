@@ -2,6 +2,7 @@
 #include <string.h>
 #include <assert.h>
 #include <stdint.h>
+#include <inttypes.h>
 
 #include "Vtop.h" 
 #include "Vtop_top.h" 
@@ -47,6 +48,14 @@ uint32_t reg_read(const char *s, bool *success){
   return 0;
 }
 
+void reg_display(){
+
+	for(int i =0;i<32;i++){
+		printf("%-15s0x%-20" PRIX32 "%-20" PRIu32 "\n",regs[i], top->top->GPR->rf[i],top->top->GPR->rf[i]);
+	}
+	printf("%-15s0x%-20" PRIX32 "0x%-20" PRIX32 "\n","pc", top->pc, top->pc);
+  
+}
 
 static void single_cycle() {
     top->clk = 0; top->eval(); 

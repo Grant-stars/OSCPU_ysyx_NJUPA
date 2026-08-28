@@ -50,7 +50,7 @@ word_t isa_reg_str2val(const char *s, bool *success) {
   return 0;
 }
   
-bool checkregs(CPU_state *ref_r, vaddr_t pc){
+bool isa_reg_check(CPU_state *ref_r, vaddr_t pc){
 	for(int i=0; i<32; i++){
 		if(cpu.gpr[i]!=ref_r->gpr[i]){
 			return false;
@@ -63,7 +63,19 @@ bool checkregs(CPU_state *ref_r, vaddr_t pc){
 }
 
 
+void regcpy(CPU_state* dut){
+	for(int i=0; i<32; i++){
+		dut->gpr[i] = cpu.gpr[i];	
+	}
+	dut->pc = cpu.pc;
+}
 
+void regset(CPU_state* dut){
+	for(int i =0; i<32; i++){
+		cpu.gpr[i]=dut->gpr[i];
+	}
+	cpu.pc = dut->pc;
+}
 
 
 

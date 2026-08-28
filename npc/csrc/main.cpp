@@ -1,9 +1,11 @@
+#include <cstdint>
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
 #include <stdint.h>
 #include <inttypes.h>
 #include "common.h"
+#include "include/cpu.h"
 
 #include "Vtop.h" 
 #include "Vtop_top.h" 
@@ -18,6 +20,7 @@ VerilatedFstC* tfp = new VerilatedFstC; //创建一个 Verilator 提供的 FST �
 
 bool end;
 bool* end_ptr = &end;
+bool exception = false;
 int good = 0;
 bool g_print_step = false;
 
@@ -30,6 +33,7 @@ bool scan_wp();
 void disasm(uint32_t pc, uint32_t instruction);
 void free_elf_table();
 void func_check(int jump, int rs1, int rd, uint32_t pc, uint32_t npc);
+void difftest_step(uint32_t pc, uint32_t npc); 
 
 const char *regs[] = {
   "$0", "ra", "sp", "gp", "tp", "t0", "t1", "t2",
@@ -37,6 +41,22 @@ const char *regs[] = {
   "a6", "a7", "s2", "s3", "s4", "s5", "s6", "s7",
   "s8", "s9", "s10", "s11", "t3", "t4", "t5", "t6"
 };
+
+CPU_state cpu;
+
+void CPU_update(){
+	for(int i=0; i<32; i++){
+		cpu.gpr[i] = top->top->GPR->rf[i];
+	}
+	cpu.pc = top->pc;
+}
+
+void CPU_reset(){
+	for(int i=0; i<32; i++){
+		cpu.gpr[i] = 0;
+	}
+	cpu.pc = RESET_VECTOR;
+}
 
 uint32_t reg_read(const char *s, bool *success){
   if(!strcmp(s,"0")){
@@ -66,7 +86,20 @@ void reg_display(){
   
 }
 
-void trace_and_difftest(uint32_t pc, uint32_t inst){
+bool reg_check(CPU_state *ref_r, uint32_t pc){
+	CPU_update();
+	for(int i=0; i<32; i++){
+		if(cpu.gpr[i]!=ref_r->gpr[i]){
+			return false;
+		}
+	}	
+	if(cpu.pc!=ref_r->pc){
+		return false;
+	}
+	return true;
+}
+
+void trace_and_difftest(uint32_t pc, uint32_t inst, uint32_t npc){
 #ifdef CONFIG_ITRACE
 	disasm(pc, inst);
 	log_write("%s\n", log_buf); 
@@ -75,6 +108,7 @@ void trace_and_difftest(uint32_t pc, uint32_t inst){
 #ifdef CONFIG_FTRACE
 	func_check(top->top->IDU->jump, top->top->IDU->rs1, top->top->IDU->rd, pc, top->pc);
 #endif
+  IFDEF(CONFIG_DIFFTEST, difftest_step(pc, npc));
 }
 
 
@@ -101,14 +135,19 @@ int exec_once(){
 	uint32_t trace_inst=top->inst;
 	single_cycle();
 	g_nr_guest_inst++;
-	trace_and_difftest(trace_pc, trace_inst);
-    if(end){
+	trace_and_difftest(trace_pc, trace_inst, top->pc);
+	if(exception){
+		end=true;
+		return 1;
+	}
+	else if(end){
 		good = (top->top->GPR->rf[10] == 0);
+		
 		if(good){
-			printf("HIT GOOD TRAP\n");
+			printf("%s\n", ANSI_FMT("HIT GOOD TRAP", ANSI_FG_GREEN));
 		}
 		else{
-			printf("HIT BAD TRAP\n");
+			printf("%s\n", ANSI_FMT("HIT BAD TRAP", ANSI_FG_RED));
 		}
         return 1; 
 	}
@@ -126,6 +165,10 @@ int exec_once(){
 
 
 void cpu_exec(uint64_t n){
+	if(end){
+		printf("Program execution has ended\n");
+		return ;
+	}
 	g_print_step = (n < 10);
 	while(n-->0){
 		if(exec_once()){

@@ -39,6 +39,13 @@ CXXFLAGS += -I$(CAPSTONE_INC)
 CAPSTONE_SO=$(abspath csrc/tools/capstone/repo/libcapstone.so.5)
 CXXFLAGS += -DCAPSTONE_SO_PATH=\"$(CAPSTONE_SO)\"
 
+
+# rules for difftest
+DIFF_REF_PATH = $(NPC_HOME)/csrc/tools/nemu-diff
+DIFF_REF_SO = $(DIFF_REF_PATH)/riscv32-nemu-interpreter-so
+ARGS_DIFF = --diff=$(DIFF_REF_SO)
+override ARGS += $(ARGS_DIFF)
+
 # 如果启用NVBoard， 需传入NVBOARD=1
 NVBOARD?=
 ifneq ($(NVBOARD),)

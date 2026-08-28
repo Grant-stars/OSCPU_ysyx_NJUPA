@@ -13,11 +13,23 @@
 * See the Mulan PSL v2 for more details.
 ***************************************************************************************/
 
+#include "common.h"
 #include <memory/host.h>
 #include <memory/paddr.h>
 #include <device/mmio.h>
 #include <isa.h>
 #include <stdint.h>
+
+//only when compiled as ref
+static inline bool in_dut_pmem(paddr_t addr){
+	if(addr == 0x10000000 || (addr >= 0x02000000 && addr <= 0x02000000+0xffff)){
+		return true;
+	}
+	else{
+		return false;
+	}
+}
+
 
 extern uint64_t memory_access;
 #if   defined(CONFIG_PMEM_MALLOC)
@@ -61,6 +73,9 @@ word_t paddr_read(paddr_t addr, int len) {
   #endif
   if (likely(in_pmem(addr))) return pmem_read(addr, len);
   IFDEF(CONFIG_DEVICE, return mmio_read(addr, len));
+#ifdef CONFIG_TARGET_SHARE
+	if(in_dut_pmem(addr)) return 0;
+#endif
   out_of_bound(addr);
   return 0;
 }
@@ -74,5 +89,8 @@ void paddr_write(paddr_t addr, int len, word_t data) {
   #endif
  if (likely(in_pmem(addr))) { pmem_write(addr, len, data); return; }
   IFDEF(CONFIG_DEVICE, mmio_write(addr, len, data); return);
+#ifdef CONFIG_TARGET_SHARE
+	if(in_dut_pmem(addr)) return ;
+#endif
   out_of_bound(addr);
 }

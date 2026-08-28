@@ -22,3 +22,9 @@ src/utils/disasm.c: $(LIBCAPSTONE)
 $(LIBCAPSTONE):
 	$(MAKE) -C tools/capstone
 endif
+
+ifndef CONFIG_TARGET_NATIVE_ELF
+
+SRCS-BLACKLIST-y += src/utils/elf.c
+
+endif

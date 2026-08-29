@@ -1,3 +1,4 @@
+#include "include/cpu.h"
 #include "svdpi.h"
 #include "Vtop__Dpi.h"
 #include <assert.h>
@@ -8,6 +9,8 @@
 #include "common.h"
 extern uint8_t MEM[];
 extern bool* end_ptr;
+extern bool exception;
+extern CPU_state cpu;
 #define CONFIG_MBASE      0x80000000
 
 #define CLOCK_ADDR        0x02000000
@@ -116,4 +119,11 @@ void pmem_write(int waddr, int wdata, char wmask) {
 void finish(){
     *end_ptr = true;
     return;
+}
+
+void unimplement(){
+	CPU_update();
+	printf(ANSI_FMT("The instruction 0x%.8x: 0x%.8x is not implemented.\n", ANSI_FG_RED), cpu.pc, pmem_read(cpu.pc));
+	exception =  true;
+	return ;
 }

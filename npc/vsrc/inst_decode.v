@@ -204,6 +204,7 @@ always@(*) begin
         end
 
         default:begin
+			unimplement(); //The instruction is not implemented
             op1 = 0;
             op2 = 0;
             alu_op = ALU_NOP;

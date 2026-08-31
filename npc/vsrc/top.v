@@ -56,11 +56,13 @@ module top(
 
   //IFU:
   wire [1:0] jump;
+  wire [31:0] target_address;
 
   inst_fetch IFU(
     .rst(rst),
     .clk(clk),
-    .data(outdata),
+	.target_address(target_address),
+	.flag(outdata[0]),
     .jump(jump),
     .pc(pc),
     .inst(inst)
@@ -74,6 +76,8 @@ module top(
   wire [4:0] ls_type;
   wire w;
   wire [1:0] wb_sel;
+  wire [31:0] offset;
+  wire [31:0] base;
 
   inst_decode IDU(
     .inst(inst),
@@ -90,15 +94,20 @@ module top(
     .jump(jump),
     .wb_sel(wb_sel),
     .ebreak(ebreak),
-    .wen(w)
-    );
+    .wen(w),
+	.offset(offset),
+	.base(base)
+  );
 
   //EXU
   execution EXU(
     .op1(op1),
     .op2(op2),
     .alu_op(alu_op),
-    .out(outdata)
+	.offset(offset),
+	.base(base),
+    .out(outdata),
+	.target_address(target_address)
   );
 
 

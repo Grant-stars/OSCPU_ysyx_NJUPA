@@ -1,12 +1,13 @@
 module inst_fetch(
     input rst,
     input clk,
-    input [31:0] data,
+    input [31:0] target_address,
+	input flag,
     input [1:0] jump,
     output reg [31:0] pc,
     output reg [31:0] inst
 );
-    parameter [1:0] JUMP_NOP = 0, JUMP_JALR = 1, JUMP_JAL =2;
+    parameter [1:0] JUMP_NOP = 0, JUMP_JALR = 1, JUMP_JAL =2, JUMP_CB = 3;
     initial begin
         pc = 32'h80000000;
     end
@@ -15,8 +16,9 @@ module inst_fetch(
     always@(*)begin
         case(jump)
             JUMP_NOP: dnpc = pc+4;
-            JUMP_JALR: dnpc = {data[31:1], 1'b0};
-            JUMP_JAL: dnpc = data;
+            JUMP_JALR: dnpc = {target_address[31:1], 1'b0};
+            JUMP_JAL: dnpc = target_address;
+			JUMP_CB: dnpc = flag?target_address:pc+4;
         default: dnpc = pc+4;
         endcase
     end

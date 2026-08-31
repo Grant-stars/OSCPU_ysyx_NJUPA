@@ -14,14 +14,17 @@ module inst_decode(
     output reg [1:0] jump /*verilator public*/,
     output reg [1:0] wb_sel,
     output reg ebreak,
-    output reg wen
+    output reg wen,
+	output reg [31:0] offset,
+	output reg [31:0] base
 );
 
 //parameter definition
-parameter [4:0] ALU_NOP = 0, ALU_ADD = 1, ALU_SUB = 2, ALU_SLL= 3, ALU_SRL = 4, ALU_SRA = 5, ALU_SLT = 6, ALU_SLTU = 7;
+parameter [4:0] ALU_NOP = 0, ALU_ADD = 1, ALU_SUB = 2, ALU_SLL= 3, ALU_SRL = 4,
+	ALU_SRA = 5, ALU_SLT = 6, ALU_SLTU = 7, ALU_BEQ = 8, ALU_BNE = 9, ALU_AND = 10;
 parameter [4:0] LS_NOP = 0, LS_LW = 3, LS_LBU = 4, LS_SB = 6, LS_SW = 8;
 parameter [1:0] WB_ALU = 1, WB_MEM = 2, WB_PC = 3;
-parameter [1:0] JUMP_NOP = 0, JUMP_JALR = 1, JUMP_JAL = 2;
+parameter [1:0] JUMP_NOP = 0, JUMP_JALR = 1, JUMP_JAL = 2, JUMP_CB = 3;
 
 //sign definition
 wire [4:0] rs1 /*verilator public*/, rs2;
@@ -33,6 +36,7 @@ wire [31:0] immI;
 wire [31:0] immS;
 wire [31:0] immU;
 wire [31:0] immJ;
+wire [31:0] immB;
 wire [31:0] shamt;
 
 //data decode
@@ -51,6 +55,8 @@ assign immI = {{20{inst[31]}}, inst[31:20]};
 assign immS = {{20{inst[31]}}, inst[31:25], inst[11:7]};
 assign immU = {inst[31:12], 12'b0};
 assign immJ = {{12{inst[31]}}, inst[19:12], inst[20], inst[30:25], inst[24:21], 1'b0};
+assign immB = {{20{inst[31]}}, inst[7], inst[30:25], inst[11:8], 1'b0};
+
 assign shamt = {27'b0, rs2};
 
 
@@ -67,6 +73,8 @@ always@(*) begin
     wb_sel = 0;
     ebreak = 0;
     ls_type = LS_NOP;
+	offset = 0;
+	base = 0;
 
     case(opcode)
         //lui
@@ -122,6 +130,15 @@ always@(*) begin
 					wb_sel = WB_ALU;
 				end
 
+				//andi
+				3'b111:begin
+					op1 = src1;
+					op2 = immI;
+					alu_op = ALU_AND;
+					wen = 1;
+					wb_sel = WB_ALU;
+				end
+
 				//slli
 				3'b001:begin
 					case(funct7)
@@ -157,12 +174,8 @@ always@(*) begin
 						end
 						
 						default: unimplement(); //The instruction is not implemented
-
 					endcase
-
 				end
-
-				
 				
                 default:begin
 					unimplement(); //The instruction is not implemented
@@ -343,9 +356,8 @@ always@(*) begin
         //Control Transfer Instructions
 		//jal
 		7'b1101111:begin
-			op1 = pc;
-			op2 = immJ;
-			alu_op = ALU_ADD;
+			offset = immJ;
+			base = pc;
 			wen = 1;
 			jump = JUMP_JAL;
 			wb_sel = WB_PC;
@@ -356,9 +368,8 @@ always@(*) begin
             case(funct3)
                 //jalr
                 3'b000:begin
-                    op1 = src1;
-                    op2 = immI;
-                    alu_op = ALU_ADD;
+                    offset = immI;
+					base = src1;
                     wen = 1;
                     jump = JUMP_JALR;
                     wb_sel = WB_PC;
@@ -370,6 +381,35 @@ always@(*) begin
 				end
             endcase
         end
+
+		//Conditional Branches
+		7'b1100011:begin
+			case(funct3)
+				//beq
+				3'b000:begin
+					op1 = src1;
+					op2 = src2;
+					alu_op = ALU_BEQ;
+					jump = JUMP_CB;
+					offset = immB;
+					base = pc;
+				end
+
+				//bne
+				3'b001:begin
+					op1 = src1;
+					op2 = src2;
+					alu_op = ALU_BNE;
+					jump = JUMP_CB;
+					offset = immB;
+					base = pc;
+				end
+
+				default: unimplement(); //The instruction is not implemented
+			endcase
+
+		end
+		
 
         //ebreak:
         7'b1110011:begin

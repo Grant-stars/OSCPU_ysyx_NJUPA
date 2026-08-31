@@ -17,7 +17,7 @@ module load_store(
     output reg valid,   //读写请求
     output reg wen          //写请求
 );
-    parameter [4:0]  LS_LH = 2 ,LS_LW = 3, LS_LBU = 4, LS_SB = 6, LS_SH = 7, LS_SW=8;
+    parameter [4:0] LS_LB = 1, LS_LH = 2 ,LS_LW = 3, LS_LBU = 4, LS_LHU = 5, LS_SB = 6, LS_SH = 7, LS_SW=8;
     assign raddr_to_mem = raddr;
     assign waddr_to_mem = waddr;
 
@@ -33,6 +33,16 @@ module load_store(
         wmask = 0;
 
         case(ls_type)
+			LS_LB:begin
+                case(raddr[1:0])
+                    2'b00: rdata_to_gpr = {{24{rdata_from_mem[7]}},rdata_from_mem[7:0]};
+                    2'b01: rdata_to_gpr = {{24{rdata_from_mem[15]}},rdata_from_mem[15:8]};
+                    2'b10: rdata_to_gpr = {{24{rdata_from_mem[23]}},rdata_from_mem[23:16]};
+                    2'b11: rdata_to_gpr = {{24{rdata_from_mem[31]}},rdata_from_mem[31:24]};
+                endcase
+                valid = 1;
+			end
+
 			LS_LH:begin
 				case(raddr[1:0])
 					2'b00: rdata_to_gpr = {{16{rdata_from_mem[15]}},rdata_from_mem[15:0]};
@@ -56,6 +66,16 @@ module load_store(
                 endcase
                 valid = 1;
             end
+
+			LS_LHU:begin
+				case(raddr[1:0])
+					2'b00: rdata_to_gpr = {16'b0,rdata_from_mem[15:0]};
+					2'b10: rdata_to_gpr = {16'b0,rdata_from_mem[31:16]};
+					default:rdata_to_gpr = 0;
+				endcase
+				valid = 1;
+
+			end
 
             //pmem_write()总是往地址为`waddr & ~0x3u`的4字节按写掩码`wmask`写入`wdata`
             //故此处data需根据指令类型以及地址低两位做搬移

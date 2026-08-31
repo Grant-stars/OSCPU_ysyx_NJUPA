@@ -6,19 +6,19 @@ module execution(
 );
 
 //parameter definition
-parameter [4:0] ALU_ADD = 1;
+parameter [4:0] ALU_ADD = 1, ALU_SLL= 2, ALU_SRL = 3, ALU_SRA = 4;
 
 always @(*)begin
     out = op1+op2;
     case(alu_op)
-        ALU_ADD:begin
-            out = op1+op2;
-        end
-
+        ALU_ADD: out = op1+op2;
+		ALU_SLL: out = op1 << op2;
+		ALU_SRL: out = op1 >> op2;
+		ALU_SRA: out = op1 >>> op2;
         default: begin
             out = 0;
         end
     endcase
 
-end                                          
+end
 endmodule

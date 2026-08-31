@@ -77,10 +77,11 @@ module top(
 
   inst_decode IDU(
     .inst(inst),
+	.pc(pc),
     .rdata1(rdata1),
     .rdata2(rdata2),
     .rd(rd),
-    .op1(op1), 
+    .op1(op1),
     .op2(op2),
     .raddr1(raddr1),
     .raddr2(raddr2),

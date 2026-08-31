@@ -9,15 +9,22 @@ module execution(
 );
 
 //parameter definition
-parameter [4:0] ALU_ADD = 1, ALU_SUB = 2, ALU_SLL= 3, ALU_SRL = 4, 
-	ALU_SRA = 5, ALU_SLT = 6, ALU_SLTU = 7, ALU_BEQ = 8, ALU_BNE = 9, ALU_AND = 10;
+parameter [4:0] ALU_ADD = 1, ALU_SUB = 2, ALU_SLL= 3, ALU_SRL = 4,
+	ALU_SRA = 5, ALU_SLT = 6, ALU_SLTU = 7, ALU_BEQ = 8, ALU_BNE = 9,
+	ALU_BLT = 10, ALU_BLTU = 11,  ALU_BGE = 12, ALU_BGEU = 13, ALU_AND = 14,
+	ALU_OR = 15, ALU_XOR = 16;
+
 
 wire overflow, carry;
 wire [31:0] add_out;
 wire Cin;
-	
-assign Cin = (alu_op==ALU_SUB) | (alu_op==ALU_SLT) | (alu_op==ALU_BEQ) |
-	(alu_op==ALU_BNE);
+wire alu_cmp;
+
+assign alu_cmp = (alu_op==ALU_SLT) | (alu_op==ALU_SLTU) | (alu_op==ALU_BEQ) |
+	(alu_op==ALU_BNE) | (alu_op==ALU_BLT) | (alu_op==ALU_BLTU) | (alu_op==ALU_BGE) |
+	(alu_op==ALU_BGEU);
+
+assign Cin = (alu_op==ALU_SUB) | alu_cmp;
 assign target_address = offset + base;
 
 adder ADDER(
@@ -41,7 +48,14 @@ always @(*)begin
 		ALU_SLTU:out = {31'b0, ~carry};
 		ALU_BEQ: out = {31'b0, ~(|add_out)};
 		ALU_BNE: out = {31'b0, (|add_out)};
+		ALU_BLT: out = {31'b0, overflow ^ add_out[31]};
+		ALU_BLTU:out = {31'b0, ~carry};
+		ALU_BGE: out = {31'b0, ~(overflow ^ add_out[31])};
+		ALU_BGEU:out = {31'b0, carry};
+
 		ALU_AND: out = op1 & op2;
+		ALU_OR:  out = op1 | op2;
+		ALU_XOR: out = op1 ^ op2;
 
         default: begin
             out = 0;

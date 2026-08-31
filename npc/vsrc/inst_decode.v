@@ -24,7 +24,7 @@ parameter [4:0] ALU_NOP = 0, ALU_ADD = 1, ALU_SUB = 2, ALU_SLL= 3, ALU_SRL = 4,
 	ALU_SRA = 5, ALU_SLT = 6, ALU_SLTU = 7, ALU_BEQ = 8, ALU_BNE = 9,
 	ALU_BLT = 10, ALU_BLTU = 11,  ALU_BGE = 12, ALU_BGEU = 13, ALU_AND = 14,
 	ALU_OR = 15, ALU_XOR = 16;
-parameter [4:0] LS_NOP = 0, LS_LW = 3, LS_LBU = 4, LS_SB = 6, LS_SH = 7, LS_SW = 8;
+parameter [4:0] LS_NOP = 0, LS_LH = 2, LS_LW = 3, LS_LBU = 4, LS_SB = 6, LS_SH = 7, LS_SW = 8;
 parameter [1:0] WB_ALU = 1, WB_MEM = 2, WB_PC = 3;
 parameter [1:0] JUMP_NOP = 0, JUMP_JALR = 1, JUMP_JAL = 2, JUMP_CB = 3;
 
@@ -221,6 +221,16 @@ always@(*) begin
                     wb_sel = WB_MEM;
                     ls_type = LS_LW;
                 end
+
+				//lh
+				3'b001:begin
+                    op1 = src1;
+                    op2 = immI;
+                    alu_op = ALU_ADD;
+                    wen = 1;
+                    wb_sel = WB_MEM;
+                    ls_type = LS_LH;
+				end
 
                 //lbu
                 3'b100:begin

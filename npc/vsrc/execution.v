@@ -43,7 +43,7 @@ always @(*)begin
 		ALU_SUB: out = add_out;
 		ALU_SLL: out = op1 << op2;
 		ALU_SRL: out = op1 >> op2;
-		ALU_SRA: out = op1 >>> op2;
+		ALU_SRA: out = $signed(op1) >>> op2;
 		ALU_SLT: out = {31'b0, overflow ^ add_out[31]};
 		ALU_SLTU:out = {31'b0, ~carry};
 		ALU_BEQ: out = {31'b0, ~(|add_out)};

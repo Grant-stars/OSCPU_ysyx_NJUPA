@@ -18,7 +18,7 @@ module inst_decode(
 );
 
 //parameter definition
-parameter [4:0] ALU_NOP = 0, ALU_ADD = 1, ALU_SLL= 2, ALU_SRL = 3, ALU_SRA = 4;
+parameter [4:0] ALU_NOP = 0, ALU_ADD = 1, ALU_SUB = 2, ALU_SLL= 3, ALU_SRL = 4, ALU_SRA = 5;
 parameter [4:0] LS_NOP = 0, LS_LW = 3, LS_LBU = 4, LS_SB = 6, LS_SW = 8;
 parameter [1:0] WB_ALU = 1, WB_MEM = 2, WB_PC = 3;
 parameter [1:0] JUMP_NOP = 0, JUMP_JALR = 1, JUMP_JAL = 2;
@@ -231,6 +231,15 @@ always@(*) begin
                             wen = 1;
                             wb_sel = WB_ALU;
                         end
+						
+						//sub
+						7'b0100000:begin
+                            op1 = src1;
+                            op2 = src2;
+                            alu_op = ALU_SUB;
+                            wen = 1;
+                            wb_sel = WB_ALU;
+						end
 
 						default: begin
 							op1 = 0;
@@ -238,7 +247,45 @@ always@(*) begin
 						end
                     endcase
                 end
-                
+               
+				//sll
+				3'b001:begin
+					case(funct7)
+						7'b0000000:begin
+							op1 = src1;
+                            op2 = {27'b0, src2[4:0]};
+                            alu_op = ALU_SLL;
+                            wen = 1;
+                            wb_sel = WB_ALU;
+						end
+						default: unimplement(); //The instruction is not implemented
+					endcase
+				end
+
+				3'b101:begin
+					case(funct7)
+						//srl
+						7'b0000000:begin
+							op1 = src1;
+                            op2 = {27'b0, src2[4:0]};
+                            alu_op = ALU_SRL;
+                            wen = 1;
+                            wb_sel = WB_ALU;
+						end
+
+						//sra
+						7'b0100000:begin
+							op1 = src1;
+                            op2 = {27'b0, src2[4:0]};
+                            alu_op = ALU_SRA;
+                            wen = 1;
+                            wb_sel = WB_ALU;
+						end
+						default: unimplement(); //The instruction is not implemented
+					endcase
+				end
+
+
 				default: begin
 					op1 = 0;
 					unimplement(); //The instruction is not implemented

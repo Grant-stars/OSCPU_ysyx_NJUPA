@@ -104,6 +104,24 @@ always@(*) begin
                     ls_type = LS_NOP;
                 end
 
+				//slti
+				3'b010:begin
+					op1 = src1;
+					op2 = immI;
+					alu_op = ALU_SLT;
+					wen = 1;
+					wb_sel = WB_ALU;
+				end
+
+				//sltiu
+				3'b011:begin
+					op1 = src1;
+					op2 = immI;
+					alu_op = ALU_SLTU;
+					wen = 1;
+					wb_sel = WB_ALU;
+				end
+
 				//slli
 				3'b001:begin
 					case(funct7)

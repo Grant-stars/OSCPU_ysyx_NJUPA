@@ -90,10 +90,12 @@ bool reg_check(CPU_state *ref_r, uint32_t pc){
 	CPU_update();
 	for(int i=0; i<32; i++){
 		if(cpu.gpr[i]!=ref_r->gpr[i]){
+			printf(ANSI_FMT("npc.gpr[%d]: 0x%.8x, ref.gpr[%d]: 0x%.8x\n", ANSI_FG_RED), i, cpu.gpr[i], i, ref_r->gpr[i]);
 			return false;
 		}
 	}	
 	if(cpu.pc!=ref_r->pc){
+		printf(ANSI_FMT("npc.pc: 0x%.8x, ref.pc: 0x%.8x\n", ANSI_FG_RED), cpu.pc, ref_r->pc);
 		return false;
 	}
 	return true;

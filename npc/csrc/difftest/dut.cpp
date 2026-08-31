@@ -90,7 +90,7 @@ void init_difftest(char *ref_so_file, long img_size, int port) {
 static void checkregs(CPU_state *ref, uint32_t pc) {
   if (!reg_check(ref, pc)) {
 	  exception= true;
-	  printf("0x%.8x: %s\n", pc, ANSI_FMT("DIFFTEST ERROR TRIGGER!", ANSI_FG_RED));
+	  printf("0x%.8x: %s\n", pc, ANSI_FMT("DIFFTEST ERROR WAS TRIGGERED!", ANSI_FG_RED));
 	  printf("npc:\n");
       reg_display();
 	  printf("\nref:\n");

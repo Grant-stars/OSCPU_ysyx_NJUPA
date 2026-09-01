@@ -93,8 +93,10 @@ void init_difftest(char *ref_so_file, long img_size, int port) {
 
 static void checkregs(CPU_state *ref, vaddr_t pc) {
   if (!isa_difftest_checkregs(ref, pc)) {
+	printf("0x%.8x: %s\n", pc, ANSI_FMT("DIFFTEST ERROR WAS TRIGGERED!", ANSI_FG_RED));
     nemu_state.state = NEMU_ABORT;
     nemu_state.halt_pc = pc;
+	printf("npc:\n");
     isa_reg_display();
   }
 }

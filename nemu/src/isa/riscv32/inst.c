@@ -13,6 +13,7 @@
 * See the Mulan PSL v2 for more details.
 ***************************************************************************************/
 
+#include "isa-def.h"
 #include "local-include/reg.h"
 #include "macro.h"
 #include <cpu/cpu.h>
@@ -22,6 +23,11 @@
 
 #define ra 0x1
 #define x0 0x0
+#define M_EXCEPTION_NUMBER 11
+#define E_N M_EXCEPTION_NUMBER
+
+
+extern word_t isa_raise_intr(word_t NO, vaddr_t epc);
 
 void func_ret(Elf32_Addr pc, Elf32_Addr dest);
 void func_call(Elf32_Addr pc, Elf32_Addr dest);
@@ -214,7 +220,13 @@ static int decode_exec(Decode *s) {
   INSTPAT("0000001 ????? ????? 110 ????? 01100 11", rem    , _R,R(rd) = REM((int32_t)src1, (int32_t)src2));
   INSTPAT("0000001 ????? ????? 111 ????? 01100 11", remu   , _R,R(rd) = REMU((uint32_t)src1, (uint32_t)src2));
 
+  //CSR instructions
+  INSTPAT("??????? ????? ????? 001 ????? 11100 11", csrrw  , I, { if(rd!=0) R(rd) = READ_CSR((imm & 0xfff)); WRITE_CSR((imm & 0xfff), src1); });
+  INSTPAT("??????? ????? ????? 010 ????? 11100 11", csrrs  , I, { uint32_t tmp = (uint32_t)(READ_CSR((imm & 0xfff))); R(rd) = tmp; WRITE_CSR((imm & 0xfff), (src1 | tmp));});
+
+  INSTPAT("0011000 00010 00000 000 00000 11100 11", mret   , N, JA = READ_CSR(0x341); );
   INSTPAT("0000000 00001 00000 000 00000 11100 11", ebreak , N, NEMUTRAP(s->pc, R(10))); // R(10) is $a0
+  INSTPAT("0000000 00000 00000 000 00000 11100 11", ecall  , N, JA = isa_raise_intr(E_N, s->pc));
   INSTPAT("??????? ????? ????? ??? ????? ????? ??", inv    , N, INV(s->pc));
   INSTPAT_END();
 

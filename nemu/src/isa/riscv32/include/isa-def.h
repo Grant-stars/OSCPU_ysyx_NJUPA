@@ -18,6 +18,8 @@
 
 #include <common.h>
 
+// mstatus: 0x300; mtvec: 0x305; mepc: 0x341; mcause: 0x342
+
 #define IS_IN_CSR(addr) Assert((addr)==0x300 || (addr)==0x341 || (addr)==0x342 || (addr)==0x305, "Can not get this CSRs\n") 
 #define READ_CSR(addr) ({ IS_IN_CSR((addr)); (addr)==0x300?CSRs[0]:((addr)==0x305?CSRs[1]:((addr)==0x341?CSRs[2]:CSRs[3])); })
 #define WRITE_CSR(addr, data) do {	\

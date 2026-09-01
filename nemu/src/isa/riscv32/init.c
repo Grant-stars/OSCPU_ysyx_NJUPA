@@ -13,6 +13,7 @@
 * See the Mulan PSL v2 for more details.
 ***************************************************************************************/
 
+#include "isa-def.h"
 #include <isa.h>
 #include <memory/paddr.h>
 
@@ -75,7 +76,9 @@ static void restart() {
 void init_isa() {
   /* Load built-in image. */
   memcpy(guest_to_host(RESET_VECTOR), img, sizeof(img));
-
+					
+  /* Initialize the mstatus with 0x1800 */
+  WRITE_CSR(0x300, 0x1800);  
 
   /* Initialize this virtual computer system. */
   restart();

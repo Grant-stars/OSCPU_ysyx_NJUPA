@@ -606,3 +606,131 @@ io_read(AM_TIMER_UPTIME)
 
 - 宏定义未用`do{} while(0)`包裹
 - 运行马里奥时方向键是反的。
+
+
+
+## PA3
+
+### 理解穿越时空的旅程
+
+硬件提供一种可以限制入口的执行流切换方式. 这种方式就是自陷指令, 程序执行自陷指令之后, 就会陷入到操作系统预先设置好的跳转目标. 这个跳转目标也称为异常入口地址.**异常入口地址是硬件和操作系统约定好的**。
+
+硬件提供的上述在操作系统和用户程序之间切换执行流的功能, 在操作系统看来, 都可以划入上下文管理的一部分。因此可以将上下文管理的功能划入到AM的一类新的API中, 名字叫CTE(ConText Extension).
+
+
+
+在`yield test`中，首先会先用`CTE`宏，接受一个函数作为参数并声明这个函数，即`intr.c`中的`simple_trap()`函数作为事件处理回调函数。紧接着把这个函数传递给`cte_init`对CTE进行初始化。这个函数会做两件事情，第一件就是**设置异常入口地址**：
+
+```c
+  asm volatile("csrw mtvec, %0" : : "r"(__am_asm_trap));
+```
+
+利用内联汇编将`__am_asm_trap`这个地址设置到`mtvec`寄存器里面，也即设置异常入口地址为`__am_asm_trap`。而这个地址来自于`trap.S`汇编语言文件中，用汇编语言定义了一个函数`__am_asm_trap`，由于函数名可被转换成函数指针，故可作为地址写入`mtvec`寄存器中。`cte_init()`函数做的第二件事是**注册一个事件处理回调函数**，即`yield test`提供的`simple_trap()`，这个函数将会在`__am_irq_handle()`函数中调用。
+
+初始化完毕之后，`yield test`将会调用测试主体函数`hello_intr()`, 首先输出一些信息, 然后通过`io_read(AM_INPUT_CONFIG)`启动输入设备, 接下来`hello_intr()`将通过`iset(1)`打开中断, 最后`hello_intr()`将进入测试主循环: 代码将不断调用`yield()`进行自陷操作。而`yield()`也是由内联汇编实现：
+
+```c
+  asm volatile("li a7, -1; ecall");
+```
+
+首先将立即数 `-1` 写入寄存器 `a7`，发起编号为 -1 的系统调用（`yield`）。（`mcause` 描述发生了什么类型的异常，是`ISA`手册里面定义的；而这里的系统调用号则是软件自行定义的（如AM或者操作系统））。紧接着使用`ecall`指令作为自陷指令，触发自陷。
+
+作为指令集模拟器，`nemu`可以模拟出`ecall`的行为：将当前PC值保存到`mepc`寄存器、在`mcause`寄存器中设置异常号、从`mtvec`寄存器中取出异常入口地址并跳转到异常入口地址，执行对应函数。由于PA内只考虑M模式，故异常号设置为11。
+
+由于异常入口地址是硬件和操作系统约定好的, 接下来的处理过程将会由操作系统来接管,  操作系统将视情况决定是否终止当前程序的运行(例如触发段错误的程序将会被杀死). 若决定无需杀死当前程序, 等到异常处理结束之后,  就根据之前保存的信息恢复程序的状态, 并从异常处理过程中返回到程序触发异常之前的状态. 
+
+进行异常处理的时候不可避免地需要用到通用寄存器,  然而看看现在的通用寄存器, 里面存放的都是执行流切换之前的内容. 这些内容也是上下文的一部分, 如果不保存就覆盖它们,  将来就无法恢复这一上下文了. 但通常硬件并不负责保存它们, 因此需要通过软件代码来保存它们的值。除了通用寄存器之外, 上下文还包括：触发异常时的PC和处理器状态(`mepc`, `mstatus`)、异常号(`mcause`)以及地址空间。
+
+在`yield test`中，即跳转到异常入口`__am_asm_trap`，开始执行相关代码:
+
+```assembly
+  addi sp, sp, -CONTEXT_SIZE
+
+  MAP(REGS, PUSH)
+
+  csrr t0, mcause
+  csrr t1, mstatus
+  csrr t2, mepc
+
+  STORE t0, OFFSET_CAUSE(sp)
+  STORE t1, OFFSET_STATUS(sp)
+  STORE t2, OFFSET_EPC(sp)
+
+  # set mstatus.MPRV to pass difftest
+  li a0, (1 << 17)
+  or t1, t1, a0
+  csrw mstatus, t1
+
+  mv a0, sp
+  call __am_irq_handle
+
+  LOAD t1, OFFSET_STATUS(sp)
+  LOAD t2, OFFSET_EPC(sp)
+  csrw mstatus, t1
+  csrw mepc, t2
+
+  MAP(REGS, POP)
+
+  addi sp, sp, CONTEXT_SIZE
+  mret
+```
+
+首先开辟栈指针，大小为`((NR_REGS + 3) * XLEN)`，也即`NR_REGS`个通用寄存器加上3个CSR的大小。
+
+` MAP(REGS, PUSH)`宏会将`(NR_REGS-2)`个通用寄存器压入栈中（忽略0号寄存器和sp寄存器）。紧接着读取`mcause`、`mstatus`和`mepc`寄存器的值并依次保存到栈中。
+
+然后设置 `mstatus.MPRV`以通过`difftest`。
+
+此时栈上排布：
+
+```text
+低地址
+|
+-----sp
+| xxx(0号寄存器的位置)
+-----sp+XLEN
+| ra寄存器的值
+-----sp+2*XLEN
+| xxx(sp寄存器的位置)
+-----sp+3*XLEN
+|
+... 其他gpr
+|
+---sp+NR_REGS*XLEN
+| mcause寄存器的值
+--- sp+(NR_REGS+1)*XLEN
+| mstatus寄存器的值
+--- sp+(NR_REGS+2)*XLEN
+| mepc寄存器的值
+--- sp+(NR_REGS+3)*XLEN
+|
+高地址
+```
+
+ 如此，异常触发的上下文就被保存在了栈中。之后执行
+
+```assembly
+  mv a0, sp
+  call __am_irq_handle
+```
+
+调用`__am_irq_handle()`进行具体的异常处理。在`riscv`的ABI约定中，`a0`寄存器是函数参数寄存器，也即`mv`这条代码将`sp`的值写入到`a0`寄存器中作为`__am_irq_handle()`的参数。而该函数接收的是一个结构体指针`Context *c`作为参数，故该函数中会将`sp`栈指针视为结构体指针并进行成员的访问。从内存的排布上来看，`sp`栈指针到`(sp+(NR_REGS+3)*XLEN)`的数据是对齐的，并且包含了所有上下文信息，故只要按照栈中上下文数据的保存顺序设计`context`结构体的成员设计，那就可以通过该指针访问到上下文的信息。而`riscv32`是将地址空间信息与0号寄存器共用存储空间，故有：
+
+```c
+struct Context {
+  union {
+	  void *pdir;
+	  uintptr_t gpr[NR_REGS];
+  };
+  uintptr_t mcause, mstatus, mepc;
+};
+
+```
+
+进入`__am_irq_handle()`函数后，会根据`c->mcause`（异常号）和`c->GPR1`（系统调用号）判断异常的类型，把执行流切换的原因打包成事件，然后调用在`cte_init()`中注册的事件处理回调函数, 将事件交给`yield test`来处理. 在`yield test`中, 这一回调函数即`simple_trap()`函数. `simple_trap()`函数会根据事件类型再次进行分发。此处`__am_irq_handle()`函数将自陷操作打包成编号为`EVENT_YIELD`的事件，传给`simple_trap()`函数。在`simple_trap()`函数中，识别到事件编号为`EVENT_YIELD`，执行
+
+```c
+      putch('y'); break;
+```
+
+接着代码将会一路返回到`trap.S`的`__am_asm_trap()`，恢复上下文：将`mstatus` 、`mepc`以及通用寄存器从栈中恢复到寄存器中。最后释放栈指针并用`mret`指令返回到`ecall`指令保存的`mepc`处。riscv32的`ecall`, 保存的是自陷指令的PC, 因此软件需要在适当的地方对保存的PC加上4, 使得将来返回到自陷指令的下一条指令。此处并未做加4操作，故代码最后会返回到`ecall`处再次陷入异常，故`yield test`将不断输出`y`.

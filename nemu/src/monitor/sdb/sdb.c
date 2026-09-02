@@ -136,6 +136,10 @@ static int cmd_p(char *args) {
 }
 
 static int cmd_w(char *args) {
+#ifndef CONFIG_WATCHPOINT
+	printf(ANSI_FMT("watchpoint is not enabled!\n", ANSI_FG_RED));
+	return 0;
+#endif
   if(args==NULL){
     printf("Argument required for w\n");
     return 0;

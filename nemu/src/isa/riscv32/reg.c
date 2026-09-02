@@ -15,6 +15,7 @@
 
 #include <isa.h>
 #include "local-include/reg.h"
+#include "isa-def.h"
 #include <inttypes.h>
 const char *regs[] = {
   "$0", "ra", "sp", "gp", "tp", "t0", "t1", "t2",
@@ -28,6 +29,10 @@ void isa_reg_display() {
     printf("%-15s0x%-20"PRIX32"%-20"PRIu32"\n",regs[i], cpu.gpr[i], cpu.gpr[i]);
   }
   printf("%-15s0x%-20"PRIX32"0x%-20"PRIX32"\n","pc", cpu.pc, cpu.pc);
+  printf("%-15s0x%-20"PRIX32"%-20"PRIu32"\n", "mstatus", CSRs[0], CSRs[0]);
+  printf("%-15s0x%-20"PRIX32"%-20"PRIu32"\n", "mtvec", CSRs[1], CSRs[1]);
+  printf("%-15s0x%-20"PRIX32"%-20"PRIu32"\n", "mepc", CSRs[2], CSRs[2]);
+  printf("%-15s0x%-20"PRIX32"%-20"PRIu32"\n", "mcause", CSRs[3], CSRs[3]);
   
 }
 

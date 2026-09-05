@@ -1,11 +1,13 @@
 #include <am.h>
 #include <riscv/riscv.h>
 #include <klib.h>
+#include <stdint.h>
 
 #if __riscv_xlen == 32
-#define XLEN = 4
+#define XLEN 4
 #define word_t uint32_t
 #define MSTATUS 0x1800
+
 #elif __riscv_xlen == 64 
 #define word_t uint64_t
 #define XLEN = 8
@@ -53,7 +55,8 @@ Context *kcontext(Area kstack, void (*entry)(void *), void *arg) {
   *(((word_t*)kstack.end) - 1) = (uintptr_t)entry;
   //mstatus
   *(((word_t*)kstack.end) - 2) = MSTATUS;
-
+  //arg
+  *((word_t*)((uintptr_t)kstack.end - sizeof(Context) + 10*XLEN)) = (uintptr_t)arg;
   //cp
   Context *cp = (Context*)((uintptr_t)kstack.end - sizeof(Context)); 
   

@@ -2,6 +2,16 @@
 #include <riscv/riscv.h>
 #include <klib.h>
 
+#if __riscv_xlen == 32
+#define XLEN = 4
+#define word_t uint32_t
+#define MSTATUS 0x1800
+#elif __riscv_xlen == 64 
+#define word_t uint64_t
+#define XLEN = 8
+#define MSTATUS 0xa00001800
+#endif
+
 static Context* (*user_handler)(Event, Context*) = NULL;
 
 Context* __am_irq_handle(Context *c) {
@@ -11,7 +21,7 @@ Context* __am_irq_handle(Context *c) {
 	  //Environment call from M-mode
 	  case 11:
           switch(c->GPR1){
-			  case -1: ev.event = EVENT_YIELD; break;
+			  case -1: ev.event = EVENT_YIELD; c->mepc += 4; break;
 		      default: ev.event = EVENT_ERROR; break;
 		  }
 		  break;
@@ -39,7 +49,15 @@ bool cte_init(Context*(*handler)(Event, Context*)) {
 }
 
 Context *kcontext(Area kstack, void (*entry)(void *), void *arg) {
-  return NULL;
+  //mepc
+  *(((word_t*)kstack.end) - 1) = (uintptr_t)entry;
+  //mstatus
+  *(((word_t*)kstack.end) - 2) = MSTATUS;
+
+  //cp
+  Context *cp = (Context*)((uintptr_t)kstack.end - sizeof(Context)); 
+  
+  return cp; 
 }
 
 void yield() {

@@ -23,7 +23,6 @@ bool* end_ptr = &end;
 bool exception = false;
 int good = 0;
 bool g_print_step = false;
-
 uint64_t g_nr_guest_inst = 0;
 extern char log_buf[128];
 

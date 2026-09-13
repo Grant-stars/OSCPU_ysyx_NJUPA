@@ -26,7 +26,7 @@
 #define M_EXCEPTION_NUMBER 11
 #define E_N M_EXCEPTION_NUMBER
 
-
+bool mcycle_override = false;
 extern word_t isa_raise_intr(word_t NO, vaddr_t epc);
 
 void func_ret(Elf32_Addr pc, Elf32_Addr dest);
@@ -222,7 +222,7 @@ static int decode_exec(Decode *s) {
 
   //CSR instructions
   INSTPAT("??????? ????? ????? 001 ????? 11100 11", csrrw  , I, { if(rd!=0) R(rd) = READ_CSR((imm & 0xfff)); WRITE_CSR((imm & 0xfff), src1); });
-  INSTPAT("??????? ????? ????? 010 ????? 11100 11", csrrs  , I, { uint32_t tmp = (uint32_t)(READ_CSR((imm & 0xfff))); R(rd) = tmp; WRITE_CSR((imm & 0xfff), (src1 | tmp));});
+  INSTPAT("??????? ????? ????? 010 ????? 11100 11", csrrs  , I, { uint32_t tmp = (uint32_t)(READ_CSR((imm & 0xfff))); R(rd) = tmp; PURE_WRITE_CSR((imm & 0xfff), (src1 | tmp)); });
 
   INSTPAT("0011000 00010 00000 000 00000 11100 11", mret   , N, JA = READ_CSR(0x341); );
   INSTPAT("0000000 00001 00000 000 00000 11100 11", ebreak , N, NEMUTRAP(s->pc, R(10))); // R(10) is $a0
@@ -231,7 +231,13 @@ static int decode_exec(Decode *s) {
   INSTPAT_END();
 
   R(0) = 0; // reset $zero to 0
-
+  
+  if(!mcycle_override){
+	CYCLE_ADD();
+  }
+  else{
+	mcycle_override = false;
+  }
   return 0;
 }
 

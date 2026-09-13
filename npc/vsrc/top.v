@@ -38,6 +38,21 @@ module top(
     .w_en(w_en)
      );
 
+  //CSRs:
+  wire [11:0] csr_addr;
+  wire [31:0] csr_wdata, csr_rdata, csr_wdata_gpr;
+  wire csr_wen, csr_ren;
+
+  CSRs #(32) CSR (
+	.clk(clk),
+	.rst(rst),
+	.addr(csr_addr),
+	.wdata(csr_wdata),
+	.wen(csr_wen),
+	.ren(csr_ren),
+	.rdata(csr_rdata)
+  );
+
   //MEM
   wire [31:0] laddr, saddr, ldata, sdata;
   wire [7:0] smask;
@@ -75,7 +90,7 @@ module top(
   wire [4:0] alu_op;
   wire [4:0] ls_type;
   wire w;
-  wire [1:0] wb_sel;
+  wire [2:0] wb_sel;
   wire [31:0] offset;
   wire [31:0] base;
 
@@ -96,7 +111,13 @@ module top(
     .ebreak(ebreak),
     .wen(w),
 	.offset(offset),
-	.base(base)
+	.base(base),
+	.csr_addr(csr_addr),
+	.csr_wdata(csr_wdata),
+	.csr_wdata_gpr(csr_wdata_gpr),
+	.csr_rdata(csr_rdata),
+	.csr_wen(csr_wen),
+	.csr_ren(csr_ren)
   );
 
   //EXU
@@ -142,6 +163,7 @@ module top(
     .l_data(ldata_to_gpr),
     .PC(pc),
     .wb_sel(wb_sel),
+	.csr_data(csr_wdata_gpr),
     .w_en(w_en),
     .waddr(waddr),
     .wdata(wdata)

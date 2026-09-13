@@ -33,8 +33,8 @@ word_t isa_raise_intr(word_t NO, vaddr_t epc) {
 	  log_write("Trigger an interrupt/exception with mepc = 0x%.8x, mcause = 0x%.8x, syscall = %d, mtvec = 0x%.8x\n", epc, NO, syscall, mtvec);
       exception_access++;
     }
-  return mtvec;
 #endif
+	return mtvec;
 }
 
 word_t isa_query_intr() {

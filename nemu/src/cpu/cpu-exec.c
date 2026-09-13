@@ -25,10 +25,9 @@
  */
 #define MAX_INST_TO_PRINT 10
 
-
 //CSRs
 //support mepc, mstatus, mcause, mtvec only
-word_t CSRs[5];
+word_t CSRs[10];
 
 CPU_state cpu = {};
 uint64_t g_nr_guest_inst = 0;

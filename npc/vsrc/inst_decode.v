@@ -12,11 +12,17 @@ module inst_decode(
     output reg [4:0] alu_op,
     output reg [4:0] ls_type,
     output reg [1:0] jump /*verilator public*/,
-    output reg [1:0] wb_sel,
+    output reg [2:0] wb_sel,
     output reg ebreak,
     output reg wen,
 	output reg [31:0] offset,
-	output reg [31:0] base
+	output reg [31:0] base,
+	output reg [11:0] csr_addr,
+	output reg [31:0] csr_wdata,
+	output reg [31:0] csr_wdata_gpr,
+	input  [31:0] csr_rdata,
+	output reg csr_wen,
+	output reg csr_ren
 );
 
 //parameter definition
@@ -25,7 +31,7 @@ parameter [4:0] ALU_NOP = 0, ALU_ADD = 1, ALU_SUB = 2, ALU_SLL= 3, ALU_SRL = 4,
 	ALU_BLT = 10, ALU_BLTU = 11,  ALU_BGE = 12, ALU_BGEU = 13, ALU_AND = 14,
 	ALU_OR = 15, ALU_XOR = 16;
 parameter [4:0] LS_NOP = 0, LS_LB = 1, LS_LH = 2, LS_LW = 3, LS_LBU = 4, LS_LHU = 5, LS_SB = 6, LS_SH = 7, LS_SW = 8;
-parameter [1:0] WB_ALU = 1, WB_MEM = 2, WB_PC = 3;
+parameter [2:0] WB_ALU = 1, WB_MEM = 2, WB_PC = 3, WB_CSR = 4;
 parameter [1:0] JUMP_NOP = 0, JUMP_JALR = 1, JUMP_JAL = 2, JUMP_CB = 3;
 
 //sign definition
@@ -61,6 +67,7 @@ assign immB = {{20{inst[31]}}, inst[7], inst[30:25], inst[11:8], 1'b0};
 
 assign shamt = {27'b0, rs2};
 
+assign csr_addr= inst[31:20];
 
 
 //opcode decode
@@ -77,6 +84,10 @@ always@(*) begin
     ls_type = LS_NOP;
 	offset = 0;
 	base = 0;
+	csr_wdata = 0;
+	csr_wdata_gpr = 0;
+	csr_wen = 0;
+	csr_ren = 0;
 
     case(opcode)
         //lui
@@ -535,12 +546,29 @@ always@(*) begin
 		end
 		
 
-        //ebreak:
         7'b1110011:begin
             case(inst[31:7])
+
+				//ebreak:
                 25'b0000000000010000000000000:begin
                     ebreak = 1;
                 end
+
+				default: begin
+				//control state register
+					case(funct3)
+						//csrrs:
+						3'b010:begin
+							wb_sel = WB_CSR;
+							csr_wdata = src1 | csr_rdata;
+							csr_wdata_gpr = csr_rdata;
+							csr_ren = 1;
+							wen = 1;
+						end
+
+						default: unimplement(); //The instruction is not implemented
+					endcase
+				end
             endcase
         end
 

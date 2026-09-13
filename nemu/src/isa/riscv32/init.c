@@ -73,12 +73,23 @@ static void restart() {
   cpu.gpr[0] = 0;
 }
 
+void setup_CSRs(){
+  //mstatus:
+  CSRs[0] = 0x1800;
+
+  //mvendorid:
+  CSRs[6] = 0x79737978;
+
+  //marchid:
+  CSRs[7] = 0x18DCCC7;
+}
+
 void init_isa() {
   /* Load built-in image. */
   memcpy(guest_to_host(RESET_VECTOR), img, sizeof(img));
 					
   /* Initialize the mstatus with 0x1800 */
-  WRITE_CSR(0x300, 0x1800);  
+  setup_CSRs();
 
   /* Initialize this virtual computer system. */
   restart();

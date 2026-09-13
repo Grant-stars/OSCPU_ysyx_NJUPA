@@ -20,11 +20,16 @@
 
 // mstatus: 0x300; mtvec: 0x305; mepc: 0x341; mcause: 0x342
 // mcycle: 0xB00; mcycleh: 0xB80
+// mvendorid: 0xF11; marchid: 0xF12
 
 extern bool mcycle_override;
 
-#define IS_IN_CSR(addr) Assert((addr)==0x300 || (addr)==0x341 || (addr)==0x342 || (addr)==0x305 || (addr)==0xB00 || (addr)==0xB80, "Can not get this CSRs\n") 
-#define READ_CSR(addr) ({ IS_IN_CSR((addr)); (addr)==0x300?CSRs[0]:((addr)==0x305?CSRs[1]:((addr)==0x341?CSRs[2]:((addr)==0x342)?CSRs[3]:((addr)==0xB00?CSRs[4]:CSRs[5]))); })
+#define IS_IN_CSR(addr) Assert((addr)==0x300 || (addr)==0x341 || (addr)==0x342 ||	\
+		(addr)==0x305 || (addr)==0xB00 || (addr)==0xB80 || (addr)==0xF11 ||	\
+		(addr)==0xF12, "Can not get this CSRs\n") 
+#define READ_CSR(addr) ({ IS_IN_CSR((addr)); (addr)==0x300?CSRs[0]:	\
+		((addr)==0x305?CSRs[1]:((addr)==0x341?CSRs[2]:(((addr)==0x342)?CSRs[3]:	\
+			((addr)==0xB00?CSRs[4]:((addr)==0xB80?CSRs[5]:(((addr)==0xF11)?CSRs[6]:CSRs[7])))))); })
 #define WRITE_CSR(addr, data) do {	\
 	IS_IN_CSR(addr);	\
 	if((addr)==0x300) CSRs[0]=data;	\
@@ -33,9 +38,12 @@ extern bool mcycle_override;
 	else if((addr)==0x342) CSRs[3]=data;	\
 	else if((addr)==0xB00) {*((uint64_t*)(CSRs+4)) = ((*((uint64_t*)(CSRs+4)) + 1) & 0xffffffff00000000) | (uint64_t)(data); mcycle_override = true;}	\
 	else if((addr)==0xB80) {*((uint64_t*)(CSRs+4)) = ((*((uint64_t*)(CSRs+4)) + 1) & 0xffffffff) | (((uint64_t)(data))<<32); mcycle_override = true;}	\
+	else if((addr)==0xF11) {panic("mvendorid register is read-only!\n"); }	\
+	else if((addr)==0xF12) {panic("marchid register is read-only!\n"); }	\
 } while(0)
 
 //provided for csrr
+//ignore read-only register
 #define PURE_WRITE_CSR(addr, data) do {	\
 	if((addr)==0x300) CSRs[0]=data;	\
 	else if((addr)==0x305) CSRs[1]=data;	\
@@ -43,6 +51,8 @@ extern bool mcycle_override;
 	else if((addr)==0x342) CSRs[3]=data;	\
 	else if((addr)==0xB00) CSRs[4]=data;	\
 	else if((addr)==0xB80) CSRs[5]=data;	\
+	else if((addr)==0xF11) {}	\
+	else if((addr)==0xF12) {}	\
 } while(0)
 
 

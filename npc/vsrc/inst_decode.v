@@ -22,7 +22,11 @@ module inst_decode(
 	output reg [31:0] csr_wdata_gpr,
 	input  [31:0] csr_rdata,
 	output reg csr_wen,
-	output reg csr_ren
+	output reg csr_ren,
+	output reg trap,
+	output reg [31:0] mepc,
+	output reg [31:0] mcause,
+	input [31:0] mtvec
 );
 
 //parameter definition
@@ -88,6 +92,9 @@ always@(*) begin
 	csr_wdata_gpr = 0;
 	csr_wen = 0;
 	csr_ren = 0;
+	trap = 0;
+	mepc = 0;
+	mcause = 0;
 
     case(opcode)
         //lui
@@ -549,6 +556,18 @@ always@(*) begin
         7'b1110011:begin
             case(inst[31:7])
 
+				//ecall:
+                25'b0000000000000000000000000:begin
+					trap = 1;
+					mepc = pc;
+					mcause = 32'd11;
+					//like JAL
+					offset = 0;
+					base = mtvec;
+					jump = JUMP_JAL;
+
+                end
+
 				//ebreak:
                 25'b0000000000010000000000000:begin
                     ebreak = 1;
@@ -557,6 +576,15 @@ always@(*) begin
 				default: begin
 				//control state register
 					case(funct3)
+						//csrrw
+						3'b001:begin
+							csr_wdata = src1;
+							csr_wen = 1;
+							wb_sel = WB_CSR;
+							csr_wdata_gpr = csr_rdata;
+							wen = 1;
+						end
+
 						//csrrs:
 						3'b010:begin
 							wb_sel = WB_CSR;

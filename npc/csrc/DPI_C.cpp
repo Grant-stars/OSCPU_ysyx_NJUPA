@@ -106,7 +106,7 @@ void pmem_write(int waddr, int wdata, char wmask) {
 
 	//写设备时，difftest执行结果以dut的状态为准
     //串口
-    if(waddr==SERIAL_PORT) { is_skip_ref = true; putchar((char)(uint32_t)wdata); return; }
+    if(waddr==SERIAL_PORT) { is_skip_ref = true; putc((char)(uint32_t)wdata, stderr); return; }
     //时钟
     if(waddr>=RTC_ADDR && waddr<=RTC_ADDR+0xffff) { is_skip_ref = true; return;}
 	is_out_of_bound(waddr & ~0x3u);

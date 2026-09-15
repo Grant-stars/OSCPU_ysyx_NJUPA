@@ -2,6 +2,10 @@
 #include <riscv/riscv.h>
 #include <klib.h>
 
+#define XLEN 4
+#define word_t uint32_t
+#define MSTATUS 0x1800
+
 static Context* (*user_handler)(Event, Context*) = NULL;
 
 Context* __am_irq_handle(Context *c) {
@@ -39,7 +43,15 @@ bool cte_init(Context*(*handler)(Event, Context*)) {
 }
 
 Context *kcontext(Area kstack, void (*entry)(void *), void *arg) {
-  return NULL;
+  //mepc
+  *(((word_t*)kstack.end) - 1) = (uintptr_t)entry;
+  //mstatus
+  *(((word_t*)kstack.end) - 2) = MSTATUS;
+  //arg
+  *((word_t*)((uintptr_t)kstack.end - sizeof(Context) + 10*XLEN)) = (uintptr_t)arg;
+  //cp
+  Context *cp = (Context*)((uintptr_t)kstack.end - sizeof(Context)); 
+  return cp;
 }
 
 void yield() {

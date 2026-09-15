@@ -42,7 +42,7 @@ module top(
   wire [11:0] csr_addr;
   wire [31:0] csr_wdata, csr_rdata, csr_wdata_gpr;
   wire csr_wen, csr_ren;
-  wire [31:0] mepc, mcause, mtvec;
+  wire [31:0] mepc, mcause, mtvec, mret_mepc;
   wire trap;
 
   CSRs #(32) CSR (
@@ -56,7 +56,8 @@ module top(
 	.trap(trap),
 	.mepc_data(mepc),
 	.mcause_data(mcause),
-	.mtvec_data(mtvec)
+	.mtvec_data(mtvec),
+	.mret_mepc(mret_mepc)
   );
 
   //MEM
@@ -127,7 +128,8 @@ module top(
 	.trap(trap),
 	.mepc(mepc),
 	.mcause(mcause),
-	.mtvec(mtvec)
+	.mtvec(mtvec),
+	.mret_mepc(mret_mepc)
   );
 
   //EXU

@@ -9,7 +9,8 @@ module CSRs #(DATA_WIDTH = 32) (
 	input trap,
 	input [31:0] mepc_data,
 	input [31:0] mcause_data,
-	output [31:0] mtvec_data
+	output [31:0] mtvec_data,
+	output [31:0] mret_mepc
 );
 
 reg [63:0] mcycle; //0xB80, 0xB00
@@ -26,6 +27,7 @@ reg [31:0] mepc; //0x341
 reg [31:0] mcause; //0x342
 
 assign mtvec_data = mtvec;
+assign mret_mepc = mepc;
 
 assign n_mcycle = mcycle + 1;
 

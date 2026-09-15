@@ -26,7 +26,8 @@ module inst_decode(
 	output reg trap,
 	output reg [31:0] mepc,
 	output reg [31:0] mcause,
-	input [31:0] mtvec
+	input [31:0] mtvec,
+	input [31:0] mret_mepc
 );
 
 //parameter definition
@@ -572,6 +573,15 @@ always@(*) begin
                 25'b0000000000010000000000000:begin
                     ebreak = 1;
                 end
+
+				//mret:
+				25'b0011000000100000000000000:begin
+					//like JAL
+					offset = 0;
+					base = mret_mepc;
+					jump = JUMP_JAL;
+
+				end
 
 				default: begin
 				//control state register

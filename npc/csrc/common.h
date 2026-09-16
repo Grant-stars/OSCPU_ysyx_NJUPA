@@ -35,6 +35,6 @@ typedef uint32_t word_t;
 
 #endif
 
-#define CONFIG_DIFFTEST 1
+//#define CONFIG_DIFFTEST 1
 
 #endif

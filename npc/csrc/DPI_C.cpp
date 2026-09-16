@@ -134,3 +134,10 @@ void unimplement(){
 	exception =  true;
 	return ;
 }
+
+void CSRexception(){
+	CPU_update();
+	printf(ANSI_FMT("0x%.8x: Can not access this CSR\n", ANSI_FG_RED), pmem_read(cpu.pc));
+	exception =  true;
+	return ;
+}

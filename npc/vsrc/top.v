@@ -1,5 +1,6 @@
 import "DPI-C" function void finish();
 import "DPI-C" function void unimplement();
+import "DPI-C" function void CSRexception();
 import "DPI-C" function int pmem_read(input int raddr);
 import "DPI-C" function void pmem_write(
     input int waddr, input int wdata, input byte wmask);

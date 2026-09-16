@@ -33,7 +33,6 @@ assign n_mcycle = mcycle + 1;
 
 always@(posedge clk)begin
 	if(rst)begin
-		mcycle <= 0;
 		mvendorid <= 32'h79737978;
 		marchid <= 32'h18DCCC7;
 		mstatus <= 32'h1800;
@@ -44,70 +43,80 @@ always@(posedge clk)begin
 	else begin
 		if(wen)begin
 			case(addr)
-				12'hB00: mcycle <= {n_mcycle[63:32], wdata};
-				12'hB80: mcycle <= {wdata, n_mcycle[31:0]};
-			    12'hF11: mcycle <= n_mcycle;
-				12'hF12: mcycle <= n_mcycle;
 				12'h300: begin
 					mstatus <= wdata;
-					mcycle <= n_mcycle;
 				end
 				12'h305: begin
 					mtvec <= wdata;
-					mcycle <= n_mcycle;
 				end
 				12'h341: begin
 					mepc <= wdata;
-					mcycle <= n_mcycle;
 				end
 				12'h342: begin
 					mcause <= wdata;
-					mcycle <= n_mcycle;
 				end
+				12'hB00: ;
+				12'hB80: ;
+				12'hF11: ;
+				12'hF12: ;
 
-				default: begin
-					mcycle <= n_mcycle;
+				default: CSRexception();
+			endcase
+		end
+		else if(ren)begin
+			case(addr)
+				12'h300: begin
+					mstatus <= wdata;
 				end
+				12'h305: begin
+					mtvec <= wdata;
+				end
+				12'h341: begin
+					mepc <= wdata;
+				end
+				12'h342: begin
+					mcause <= wdata;
+				end
+			
+				12'hB00: ;
+				12'hB80: ;
+				12'hF11: ;
+				12'hF12: ;
+
+				default: CSRexception();
+			endcase
+		end
+		else if(trap)begin
+			mepc <= mepc_data;
+			mcause <= mcause_data;
+		end
+	end
+end
+
+always@(posedge clk)begin
+	if(rst)begin
+		mcycle <= 0;
+	end
+	else begin
+		if(wen)begin
+			case(addr)
+				12'hB00: mcycle <= {n_mcycle[63:32], wdata};
+				12'hB80: mcycle <= {wdata, n_mcycle[31:0]};
+				default: mcycle <= n_mcycle;
 			endcase
 		end
 		else if(ren)begin
 			case(addr)
 				12'hB00: mcycle <= {mcycle[63:32],wdata}+1;
 				12'hB80: mcycle <= {wdata,mcycle[31:0]}+1;
-			    12'hF11: mcycle <= n_mcycle;
-				12'hF12: mcycle <= n_mcycle;
-				12'h300: begin
-					mstatus <= wdata;
-					mcycle <= n_mcycle;
-				end
-				12'h305: begin
-					mtvec <= wdata;
-					mcycle <= n_mcycle;
-				end
-				12'h341: begin
-					mepc <= wdata;
-					mcycle <= n_mcycle;
-				end
-				12'h342: begin
-					mcause <= wdata;
-					mcycle <= n_mcycle;
-				end
-
-				default:begin
-					mcycle <= n_mcycle;
-				end
+				default: mcycle <= n_mcycle;
 			endcase
 		end
-		else if(trap)begin
-			mepc <= mepc_data;
-			mcause <= mcause_data;
-			mcycle <= n_mcycle;
-		end
-		else begin
-			mcycle <= n_mcycle;
-		end
+		else mcycle <=n_mcycle;
 	end
+
 end
+
 
 always@(*)begin
 	case(addr)

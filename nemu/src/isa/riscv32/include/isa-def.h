@@ -17,6 +17,7 @@
 #define __ISA_RISCV_H__
 
 #include <common.h>
+#include <cpu/difftest.h>
 
 // mstatus: 0x300; mtvec: 0x305; mepc: 0x341; mcause: 0x342
 // mcycle: 0xB00; mcycleh: 0xB80
@@ -27,9 +28,12 @@ extern bool mcycle_override;
 #define IS_IN_CSR(addr) Assert((addr)==0x300 || (addr)==0x341 || (addr)==0x342 ||	\
 		(addr)==0x305 || (addr)==0xB00 || (addr)==0xB80 || (addr)==0xF11 ||	\
 		(addr)==0xF12, "Can not get this CSRs\n") 
-#define READ_CSR(addr) ({ IS_IN_CSR((addr)); (addr)==0x300?CSRs[0]:	\
+#define READ_CSR(addr) ({ IS_IN_CSR((addr));	\
+		IFDEF(CONFIG_DIFFTEST, if((addr==0xB00)||(addr)==0xB80||(addr)==0xF11||(addr)==0xF12) { difftest_skip_ref(); })	\
+		(addr)==0x300?CSRs[0]:	\
 		((addr)==0x305?CSRs[1]:((addr)==0x341?CSRs[2]:(((addr)==0x342)?CSRs[3]:	\
-			((addr)==0xB00?CSRs[4]:((addr)==0xB80?CSRs[5]:(((addr)==0xF11)?CSRs[6]:CSRs[7])))))); })
+			((addr)==0xB00?CSRs[4]:((addr)==0xB80?CSRs[5]:(((addr)==0xF11)?CSRs[6]:CSRs[7])))))); \
+		})
 #define WRITE_CSR(addr, data) do {	\
 	IS_IN_CSR(addr);	\
 	if((addr)==0x300) CSRs[0]=data;	\

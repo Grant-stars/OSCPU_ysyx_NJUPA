@@ -107,8 +107,14 @@ always@(posedge clk)begin
 		end
 		else if(ren)begin
 			case(addr)
-				12'hB00: mcycle <= {mcycle[63:32],wdata}+1;
-				12'hB80: mcycle <= {wdata,mcycle[31:0]}+1;
+				12'hB00: begin
+					mcycle <= {mcycle[63:32],wdata}+1;
+					difftest_skip();
+				end
+				12'hB80: begin
+					mcycle <= {wdata,mcycle[31:0]}+1;
+					difftest_skip();
+				end
 				default: mcycle <= n_mcycle;
 			endcase
 		end

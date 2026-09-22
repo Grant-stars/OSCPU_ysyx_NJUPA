@@ -25,7 +25,7 @@ extern uint64_t memory_access;
 extern uint64_t function_trace;
 
 #ifdef CONFIG_DIFFTEST 
-	extern bool is_skip_ref;
+void difftest_skip_ref();
 #endif
 
 uint32_t vaddr_read(uint32_t addr);
@@ -78,10 +78,10 @@ int pmem_read(volatile int raddr) {
 
 	//读取设备时，difftest执行结果以dut的状态为准
     //串口
-    if(raddr==SERIAL_PORT) { IFDEF(CONFIG_DIFFTEST, is_skip_ref = true); return 0; }
+    if(raddr==SERIAL_PORT) { IFDEF(CONFIG_DIFFTEST, difftest_skip_ref()); return 0; }
     //时钟
     if(raddr>=RTC_ADDR && raddr<=RTC_ADDR+0xffff){
-		IFDEF(CONFIG_DIFFTEST, is_skip_ref = true);
+		IFDEF(CONFIG_DIFFTEST, difftest_skip_ref());
 
         //对于RTC(Real Time Clock)，约定设备方面提供两个寄存器
             //RTC_ADDR: day<<24 | hour<<16 | minute<<8 | second
@@ -109,9 +109,9 @@ void pmem_write(int waddr, int wdata, char wmask) {
 
 	//写设备时，difftest执行结果以dut的状态为准
     //串口
-    if(waddr==SERIAL_PORT) { IFDEF(CONFIG_DIFFTEST, is_skip_ref = true); putc((char)(uint32_t)wdata, stderr); return; }
+    if(waddr==SERIAL_PORT) { IFDEF(CONFIG_DIFFTEST, difftest_skip_ref()); putc((char)(uint32_t)wdata, stderr); return; }
     //时钟
-    if(waddr>=RTC_ADDR && waddr<=RTC_ADDR+0xffff) {IFDEF(CONFIG_DIFFTEST, is_skip_ref = true); return;}
+    if(waddr>=RTC_ADDR && waddr<=RTC_ADDR+0xffff) {IFDEF(CONFIG_DIFFTEST, difftest_skip_ref()); return;}
 	is_out_of_bound(waddr & ~0x3u);
 
     uint32_t raw_data = *(uint32_t*)(MEM+(waddr & ~0x3u)-CONFIG_MBASE);
@@ -140,4 +140,10 @@ void CSRexception(){
 	printf(ANSI_FMT("0x%.8x: Can not access this CSR\n", ANSI_FG_RED), pmem_read(cpu.pc));
 	exception =  true;
 	return ;
+}
+
+void difftest_skip(){
+#ifdef CONFIG_DIFFTEST 
+difftest_skip_ref();
+#endif
 }

@@ -8,6 +8,7 @@ module memory(
     input [31:0] wdata,
     input [7:0] wmask
 );
+/*
     always @(*)begin
         if(valid && (~wen))begin
             rdata = pmem_read(raddr);
@@ -21,5 +22,20 @@ module memory(
 		if(valid && wen)begin
             pmem_write(waddr, wdata, wmask);
 		end
-	end	
+	end
+*/
+
+  RegisterFile #(, 32) GPR (
+    .clk(clk),
+    .rst(rst),
+    .rdata1(rdata1),
+    .raddr1(raddr1),
+    .rdata2(rdata2),
+    .raddr2(raddr2), 
+    .wdata(wdata),
+    .waddr(waddr),
+    .w_en(w_en)
+     );
+
+
 endmodule

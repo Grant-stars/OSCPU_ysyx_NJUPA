@@ -24,7 +24,7 @@ typedef uint32_t word_t;
 #define FMT_WORD "0x%08" PRIx32
 #define FMT_PADDR "0x%08" PRIx32
 
-#define CONFIG_TRACE 1
+//#define CONFIG_TRACE 1
 #ifdef CONFIG_TRACE
 
 #define CONFIG_ITRACE 1
@@ -35,6 +35,6 @@ typedef uint32_t word_t;
 
 #endif
 
-#define CONFIG_DIFFTEST 1
+//#define CONFIG_DIFFTEST 1
 
 #endif

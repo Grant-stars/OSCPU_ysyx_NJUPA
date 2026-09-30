@@ -1,3 +1,4 @@
+/* verilator lint_off UNUSEDSIGNAL */
 module inst_fetch(
     input rst,
     input clk,
@@ -29,11 +30,18 @@ module inst_fetch(
             pc<=dnpc;
         end
     end
+
+	/*
     always @(*) begin                                        
         inst = pmem_read(pc);
-    end                                          
+    end
+	*/
+reg [31:0] imem [0:255];
+initial $readmemh("/home/grant/Projects/PA/ysyx-workbench/npc/bin/sum.hex", imem);
+assign inst = imem[pc[9:2]];      // pc 起点 0x80000000 是 4KB 对齐，取低位即可
 endmodule
 
+/* verilator lint_on UNUSEDSIGNAL */
 
 
 

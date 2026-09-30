@@ -188,7 +188,7 @@ always@(*) begin
 							wen = 1;
 							wb_sel = WB_ALU;
 						end
-					default: ;//unimplement(); //The instruction is not implemented
+					default: unimplement(); //The instruction is not implemented
 					endcase
 				end
 
@@ -212,12 +212,12 @@ always@(*) begin
 							wb_sel = WB_ALU;
 						end
 						
-						default: ;//unimplement(); //The instruction is not implemented
+						default: unimplement(); //The instruction is not implemented
 					endcase
 				end
 				
                 default:begin
-					;//unimplement(); //The instruction is not implemented
+					unimplement(); //The instruction is not implemented
                     op1 = 0;
                     op2 = 0;
                     alu_op = ALU_NOP;
@@ -282,7 +282,7 @@ always@(*) begin
 				end
 
                 default:begin
-					;//unimplement(); //The instruction is not implemented
+					unimplement(); //The instruction is not implemented
                     op1 = 0;
                     op2 = 0;
                     alu_op = ALU_NOP;
@@ -322,7 +322,7 @@ always@(*) begin
 
                 default:begin
 					op1 = 0;
-					;//unimplement(); //The instruction is not implemented
+					unimplement(); //The instruction is not implemented
 				end
 				endcase
         end
@@ -352,7 +352,7 @@ always@(*) begin
 
 						default: begin
 							op1 = 0;
-							;//unimplement(); //The instruction is not implemented
+							unimplement(); //The instruction is not implemented
 						end
                     endcase
                 end
@@ -367,7 +367,7 @@ always@(*) begin
                             wen = 1;
                             wb_sel = WB_ALU;
 						end
-						default: ;//unimplement(); //The instruction is not implemented
+						default: unimplement(); //The instruction is not implemented
 					endcase
 				end
 
@@ -381,7 +381,7 @@ always@(*) begin
 							wen = 1;
 							wb_sel = WB_ALU;
 						end
-						default: ;//unimplement(); //The instruction is not implemented
+						default: unimplement(); //The instruction is not implemented
 					endcase
 				end
 
@@ -395,7 +395,7 @@ always@(*) begin
 							wen = 1;
 							wb_sel = WB_ALU;
 						end
-						default: ;//unimplement(); //The instruction is not implemented
+						default: unimplement(); //The instruction is not implemented
 					endcase
 				
 				end
@@ -428,7 +428,7 @@ always@(*) begin
                             wen = 1;
                             wb_sel = WB_ALU;
 						end
-						default: ;//unimplement(); //The instruction is not implemented
+						default: unimplement(); //The instruction is not implemented
 					endcase
 				end
 
@@ -452,7 +452,7 @@ always@(*) begin
 
 				default: begin
 					op1 = 0;
-					;//unimplement(); //The instruction is not implemented
+					unimplement(); //The instruction is not implemented
 				end
             endcase
         end
@@ -481,7 +481,7 @@ always@(*) begin
 
 				default:begin
 					op1 = 0;
-					;//unimplement(); //The instruction is not implemented
+					unimplement(); //The instruction is not implemented
 				end
             endcase
         end
@@ -548,7 +548,7 @@ always@(*) begin
 					offset = immB;
 					base = pc;
 				end
-				default: ;//unimplement(); //The instruction is not implemented
+				default: unimplement(); //The instruction is not implemented
 			endcase
 
 		end
@@ -604,14 +604,14 @@ always@(*) begin
 							wen = 1;
 						end
 
-						default: ;//unimplement(); //The instruction is not implemented
+						default: unimplement(); //The instruction is not implemented
 					endcase
 				end
             endcase
         end
 
         default:begin
-			;//unimplement(); //The instruction is not implemented
+			unimplement(); //The instruction is not implemented
             op1 = 0;
             op2 = 0;
             alu_op = ALU_NOP;

@@ -1,12 +1,10 @@
-/* verilator lint_off UNUSEDSIGNAL */
 module memory(
 	input clk,
-	input rst,
     input valid,
     input wen,
-    input [31:0] raddr ,
+    input [31:0] raddr,
     output reg [31:0] rdata,
-    input [31:0] waddr ,
+    input [31:0] waddr,
     input [31:0] wdata,
     input [7:0] wmask
 );
@@ -27,20 +25,17 @@ module memory(
 	end
 */
 
-wire [31:0] rdata2;
-
-  RegisterFile #(8, 32) MEM1(
+  RegisterFile #(, 32) GPR (
     .clk(clk),
     .rst(rst),
-    .rdata1(rdata),
-    .raddr1(raddr[7:0]),
+    .rdata1(rdata1),
+    .raddr1(raddr1),
     .rdata2(rdata2),
-    .raddr2(0), 
+    .raddr2(raddr2), 
     .wdata(wdata),
-    .waddr(waddr[7:0]),
-    .w_en(wen && valid)
+    .waddr(waddr),
+    .w_en(w_en)
      );
 
 
 endmodule
-/* verilator lint_on UNUSEDSIGNAL */

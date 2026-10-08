@@ -14,13 +14,22 @@ module load_store(
     output reg [31:0] wdata_to_mem,
     output reg [7:0] wmask,
 
-    output reg valid,   //读写请求
-    output reg wen          //写请求
+    output reg wen,     //写请求
+	input exu_valid,
+	output lsu_to_mem_valid,
+	output lsu_to_wbu_valid,
+
+	input wbu_ready,
+	output lsu_ready
 );
     parameter [4:0] LS_LB = 1, LS_LH = 2 ,LS_LW = 3, LS_LBU = 4, LS_LHU = 5, LS_SB = 6, LS_SH = 7, LS_SW=8;
     assign raddr_to_mem = raddr;
     assign waddr_to_mem = waddr;
 
+	reg valid;
+	assign lsu_to_mem_valid = exu_valid & valid;
+	assign lsu_to_wbu_valid = exu_valid;
+	assign lsu_ready = wbu_ready;
 
 
     //其中读操作总是返回按4字节对齐读出的数据, 需要由RTL代码根据读地址选择出需要的部分

@@ -11,17 +11,17 @@ module top(
   input rst,
   output [31:0] pc,
   output [31:0] inst
-  ); 
+  );
 
   //ebreak
   wire ebreak;
 
-  always @(*) begin                                        
-    if(ebreak) begin
+  always @(*) begin
+    if(ebreak & idu_valid) begin
       $display("FINISH");
       finish();
     end
-  end                                          
+  end
 
   //GPR：
   wire [31:0] rdata1, rdata2, wdata, outdata;
@@ -34,10 +34,11 @@ module top(
     .rdata1(rdata1),
     .raddr1(raddr1),
     .rdata2(rdata2),
-    .raddr2(raddr2), 
+    .raddr2(raddr2),
     .wdata(wdata),
     .waddr(waddr),
-    .w_en(w_en)
+    .w_en(w_en),
+	.wbu_valid(wbu_valid)
      );
 
   //CSRs:
@@ -59,16 +60,17 @@ module top(
 	.mepc_data(mepc),
 	.mcause_data(mcause),
 	.mtvec_data(mtvec),
-	.mret_mepc(mret_mepc)
+	.mret_mepc(mret_mepc),
+	.wbu_valid(wbu_valid)
   );
 
   //MEM
   wire [31:0] laddr, saddr, ldata, sdata;
   wire [7:0] smask;
-  wire valid, sen;
+  wire sen;
   memory MEM(
 	.clk(clk),
-    .valid(valid),
+    .valid(lsu_to_mem_valid),
     .wen(sen),
     .raddr(laddr),
     .rdata(ldata),
@@ -81,6 +83,7 @@ module top(
   //IFU:
   wire [1:0] jump;
   wire [31:0] target_address;
+  wire ifu_valid;
 
   inst_fetch IFU(
     .rst(rst),
@@ -89,7 +92,9 @@ module top(
 	.flag(outdata[0]),
     .jump(jump),
     .pc(pc),
-    .inst(inst)
+    .inst(inst),
+	.valid(ifu_valid),
+	.idu_ready(idu_ready)
   );
 
 
@@ -102,6 +107,8 @@ module top(
   wire [2:0] wb_sel;
   wire [31:0] offset;
   wire [31:0] base;
+  wire idu_valid;
+  wire idu_ready;
 
   inst_decode IDU(
     .inst(inst),
@@ -131,10 +138,17 @@ module top(
 	.mepc(mepc),
 	.mcause(mcause),
 	.mtvec(mtvec),
-	.mret_mepc(mret_mepc)
+	.mret_mepc(mret_mepc),
+	.ifu_valid(ifu_valid),
+	.valid(idu_valid),
+	.exu_ready(exu_ready),
+	.ready(idu_ready)
   );
 
   //EXU
+  wire exu_valid;
+  wire exu_ready;
+  
   execution EXU(
     .op1(op1),
     .op2(op2),
@@ -142,12 +156,20 @@ module top(
 	.offset(offset),
 	.base(base),
     .out(outdata),
-	.target_address(target_address)
+	.target_address(target_address),
+	.idu_valid(idu_valid),
+	.valid(exu_valid),
+	.lsu_ready(lsu_ready),
+	.ready(exu_ready)
   );
 
 
-  //LSU: 
+  //LSU:
   wire [31:0] ldata_to_gpr;
+  wire lsu_to_mem_valid;
+  wire lsu_to_wbu_valid;
+  wire lsu_ready;
+
   load_store LSU(
     .ls_type(ls_type),
 
@@ -164,12 +186,21 @@ module top(
     .wdata_to_mem(sdata),
 
     .wmask(smask),
-    .valid(valid),
-    .wen(sen)
+    .wen(sen),
+	
+	.exu_valid(exu_valid),
+	.lsu_to_wbu_valid(lsu_to_wbu_valid),
+	.lsu_to_mem_valid(lsu_to_mem_valid),
+
+	.wbu_ready(wbu_ready),
+	.lsu_ready(lsu_ready)
   );
 
 
   //WBU
+  wire wbu_valid;
+  wire wbu_ready;
+
   writeback WBU(
     .w(w),
     .rd(rd),
@@ -180,7 +211,10 @@ module top(
 	.csr_data(csr_wdata_gpr),
     .w_en(w_en),
     .waddr(waddr),
-    .wdata(wdata)
+    .wdata(wdata),
+	.lsu_valid(lsu_to_wbu_valid),
+	.wbu_valid(wbu_valid),
+	.wbu_ready(wbu_ready)
   );
 
 endmodule

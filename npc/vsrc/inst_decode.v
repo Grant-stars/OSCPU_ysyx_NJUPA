@@ -27,7 +27,11 @@ module inst_decode(
 	output reg [31:0] mepc,
 	output reg [31:0] mcause,
 	input [31:0] mtvec,
-	input [31:0] mret_mepc
+	input [31:0] mret_mepc,
+	input ifu_valid,
+	output valid,
+	input exu_ready,
+	output ready
 );
 
 //parameter definition
@@ -38,6 +42,9 @@ parameter [4:0] ALU_NOP = 0, ALU_ADD = 1, ALU_SUB = 2, ALU_SLL= 3, ALU_SRL = 4,
 parameter [4:0] LS_NOP = 0, LS_LB = 1, LS_LH = 2, LS_LW = 3, LS_LBU = 4, LS_LHU = 5, LS_SB = 6, LS_SH = 7, LS_SW = 8;
 parameter [2:0] WB_ALU = 1, WB_MEM = 2, WB_PC = 3, WB_CSR = 4;
 parameter [1:0] JUMP_NOP = 0, JUMP_JALR = 1, JUMP_JAL = 2, JUMP_CB = 3;
+
+assign valid = ifu_valid;
+assign ready = exu_ready;
 
 //sign definition
 wire [4:0] rs1 /*verilator public*/, rs2;
@@ -188,7 +195,7 @@ always@(*) begin
 							wen = 1;
 							wb_sel = WB_ALU;
 						end
-					default: unimplement(); //The instruction is not implemented
+						default: unimplement(); //The instruction is not implemented
 					endcase
 				end
 

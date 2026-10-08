@@ -19,6 +19,7 @@
 #include <stdio.h>
 #include "utils.h"
 #include "macro.h"
+#include "verilated_fst_c.h"   //引入波形相关头文件
 #ifdef CONFIG_ITRACE
 void out_iringbuf(); 
 #endif
@@ -33,6 +34,7 @@ void out_iringbuf();
       MUXDEF(CONFIG_TARGET_AM, printf(ANSI_FMT(format, ANSI_FG_RED) "\n", ## __VA_ARGS__), \
         (fflush(stdout), fprintf(stderr, ANSI_FMT(format, ANSI_FG_RED) "\n", ##  __VA_ARGS__))); \
       IFNDEF(CONFIG_TARGET_AM, extern FILE* log_fp; fflush(log_fp)); \
+	  extern VerilatedFstC* tfp;  tfp->close();		\
       assert(cond); \
     } \
   } while (0)

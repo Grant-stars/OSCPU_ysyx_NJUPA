@@ -5,7 +5,11 @@ module execution(
 	input [31:0] offset,
 	input [31:0] base,
     output reg [31:0] out,
-	output [31:0] target_address
+	output [31:0] target_address,
+	input idu_valid,
+	output valid,
+	input lsu_ready,
+	output ready
 );
 
 //parameter definition
@@ -14,6 +18,8 @@ parameter [4:0] ALU_ADD = 1, ALU_SUB = 2, ALU_SLL= 3, ALU_SRL = 4,
 	ALU_BLT = 10, ALU_BLTU = 11,  ALU_BGE = 12, ALU_BGEU = 13, ALU_AND = 14,
 	ALU_OR = 15, ALU_XOR = 16;
 
+assign valid = idu_valid;
+assign ready = lsu_ready;
 
 wire overflow, carry;
 wire [31:0] add_out;

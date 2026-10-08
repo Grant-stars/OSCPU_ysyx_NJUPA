@@ -7,11 +7,12 @@ module RegisterFile #(ADDR_WIDTH = 4, DATA_WIDTH = 32) (
   input [ADDR_WIDTH-1:0] raddr2,
   input [DATA_WIDTH-1:0] wdata,
   input [ADDR_WIDTH-1:0] waddr,
-  input w_en
+  input w_en,
+  input wbu_valid
 );
 
   wire wen;
-  assign wen = w_en & (|waddr);
+  assign wen = w_en & (|waddr) & wbu_valid;
   reg [DATA_WIDTH-1:0] rf [2**ADDR_WIDTH-1:0] /*verilator public*/;
   integer i;
   always @(posedge clk) begin

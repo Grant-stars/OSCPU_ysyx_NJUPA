@@ -10,7 +10,8 @@ module CSRs #(DATA_WIDTH = 32) (
 	input [31:0] mepc_data,
 	input [31:0] mcause_data,
 	output [31:0] mtvec_data,
-	output [31:0] mret_mepc
+	output [31:0] mret_mepc,
+	input wbu_valid
 );
 
 reg [63:0] mcycle; //0xB80, 0xB00
@@ -41,7 +42,7 @@ always@(posedge clk)begin
 		mcause <= 0;
 	end
 	else begin
-		if(wen)begin
+		if(wen & wbu_valid)begin
 			case(addr)
 				12'h300: begin
 					mstatus <= wdata;
@@ -63,7 +64,7 @@ always@(posedge clk)begin
 				default: CSRexception();
 			endcase
 		end
-		else if(ren)begin
+		else if(ren & wbu_valid)begin
 			case(addr)
 				12'h300: begin
 					mstatus <= wdata;
@@ -86,7 +87,7 @@ always@(posedge clk)begin
 				default: CSRexception();
 			endcase
 		end
-		else if(trap)begin
+		else if(trap & wbu_valid)begin
 			mepc <= mepc_data;
 			mcause <= mcause_data;
 		end
@@ -98,14 +99,14 @@ always@(posedge clk)begin
 		mcycle <= 0;
 	end
 	else begin
-		if(wen)begin
+		if(wen & wbu_valid)begin
 			case(addr)
 				12'hB00: mcycle <= {n_mcycle[63:32], wdata};
 				12'hB80: mcycle <= {wdata, n_mcycle[31:0]};
 				default: mcycle <= n_mcycle;
 			endcase
 		end
-		else if(ren)begin
+		else if(ren & wbu_valid)begin
 			case(addr)
 				12'hB00: begin
 					mcycle <= {mcycle[63:32],wdata}+1;

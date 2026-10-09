@@ -43,8 +43,12 @@ parameter [4:0] LS_NOP = 0, LS_LB = 1, LS_LH = 2, LS_LW = 3, LS_LBU = 4, LS_LHU 
 parameter [2:0] WB_ALU = 1, WB_MEM = 2, WB_PC = 3, WB_CSR = 4;
 parameter [1:0] JUMP_NOP = 0, JUMP_JALR = 1, JUMP_JAL = 2, JUMP_CB = 3;
 
+//Module bus
+wire idu_busy;
 assign valid = ifu_valid;
-assign ready = exu_ready;
+assign ready = (!idu_busy) && exu_ready;
+
+assign idu_busy = 0;
 
 //sign definition
 wire [4:0] rs1 /*verilator public*/, rs2;

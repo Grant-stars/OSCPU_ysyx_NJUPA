@@ -8,12 +8,12 @@ module memory(
     input [31:0] wdata,
     input [7:0] wmask
 );
-    always @(*)begin
+    always @(posedge clk)begin
         if(valid && (~wen))begin
-            rdata = pmem_read(raddr);
+            rdata <= pmem_read(raddr);
         end
         else begin
-            rdata = 0;
+            rdata <= 0;
         end
     end
 

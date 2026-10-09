@@ -11,6 +11,7 @@
 #include "Vtop_top.h" 
 #include "Vtop_RegisterFile__A5.h"
 #include "Vtop_inst_decode.h"
+#include "Vtop_inst_fetch.h"
 #include "verilated.h" 
 #include "verilated_fst_c.h"   //引入波形相关头文件
 							   
@@ -101,6 +102,10 @@ bool reg_check(CPU_state *ref_r, uint32_t pc){
 }
 
 void trace_and_difftest(uint32_t pc, uint32_t inst, uint32_t npc){
+	static uint8_t inst_finish= 0;
+	uint8_t inst_finish_reg = inst_finish;
+	inst_finish = top->top->IFU->inst_finish;
+	if(!inst_finish_reg) return ;
 #ifdef CONFIG_ITRACE
 	disasm(pc, inst);
 	log_write("%s\n", log_buf); 

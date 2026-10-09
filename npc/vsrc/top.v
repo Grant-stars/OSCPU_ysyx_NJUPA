@@ -171,6 +171,8 @@ module top(
   wire lsu_ready;
 
   load_store LSU(
+	.rst(rst),
+	.clk(clk),
     .ls_type(ls_type),
 
     .raddr(outdata),

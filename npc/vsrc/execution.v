@@ -18,8 +18,12 @@ parameter [4:0] ALU_ADD = 1, ALU_SUB = 2, ALU_SLL= 3, ALU_SRL = 4,
 	ALU_BLT = 10, ALU_BLTU = 11,  ALU_BGE = 12, ALU_BGEU = 13, ALU_AND = 14,
 	ALU_OR = 15, ALU_XOR = 16;
 
+//Module bus
+wire exu_busy;
 assign valid = idu_valid;
-assign ready = lsu_ready;
+assign ready = (!exu_busy) && lsu_ready;
+
+assign exu_busy = 0;
 
 wire overflow, carry;
 wire [31:0] add_out;

@@ -29,7 +29,7 @@ module inst_fetch(
 
     always @(posedge clk)begin
         if(rst) pc<=32'h80000000;
-        else if(if_state & idu_ready) begin
+        else if(inst_finish) begin
             pc<=dnpc;
         end
     end
@@ -44,6 +44,9 @@ module inst_fetch(
     // fsm
     reg if_state;
     wire if_next_state;
+	wire inst_finish /*verilator public*/;
+
+	assign inst_finish = if_state & idu_ready;
     assign if_next_state = (if_state & idu_ready) ? IDLE : WAIT;
     assign valid = if_state;
 

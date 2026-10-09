@@ -1,4 +1,6 @@
 module load_store(
+	input rst,
+	input clk,
     input [4:0] ls_type,
 
     input [31:0] raddr,
@@ -23,14 +25,36 @@ module load_store(
 	output lsu_ready
 );
     parameter [4:0] LS_LB = 1, LS_LH = 2 ,LS_LW = 3, LS_LBU = 4, LS_LHU = 5, LS_SB = 6, LS_SH = 7, LS_SW=8;
+	parameter IDLE = 0, WAIT = 1;
     assign raddr_to_mem = raddr;
     assign waddr_to_mem = waddr;
 
 	reg valid;
 	assign lsu_to_mem_valid = exu_valid & valid;
-	assign lsu_to_wbu_valid = exu_valid;
-	assign lsu_ready = wbu_ready;
 
+	//Module bus
+	wire lsu_busy;
+	assign lsu_to_wbu_valid = exu_valid && (lsu_state || (!lsu_state && !valid));
+	assign lsu_ready =(!lsu_busy) && wbu_ready;
+	
+	assign lsu_busy = (!lsu_state && lsu_to_mem_valid) || (lsu_state && !wbu_ready);
+
+	//SimpleBus fsm
+	reg lsu_state, lsu_next_state;
+
+	always @(*)begin
+		case(lsu_state)
+			IDLE: lsu_next_state = lsu_to_mem_valid ? WAIT : IDLE;
+			WAIT: lsu_next_state = wbu_ready ? IDLE : WAIT;
+		endcase
+	end
+	
+	always@(posedge clk)begin
+		if(rst) lsu_state <= 0;
+		else lsu_state <= lsu_next_state;
+	end
+
+	
 
     //其中读操作总是返回按4字节对齐读出的数据, 需要由RTL代码根据读地址选择出需要的部分
     //wmask`中每比特表示`wdata`中1个字节的掩码传递给pmem_write(),如`wmask = 0x3`代表只写入最低2个字节, 内存中的其它字节保持不变

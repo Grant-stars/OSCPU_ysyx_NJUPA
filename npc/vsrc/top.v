@@ -67,10 +67,11 @@ module top(
   //MEM
   wire [31:0] laddr, saddr, ldata, sdata;
   wire [7:0] smask;
-  wire sen;
+  wire sen, mem_to_lsu_valid;
   memory MEM(
 	.clk(clk),
-    .valid(lsu_to_mem_valid),
+    .lsu_reqValid(lsu_to_mem_valid),
+    .lsu_respValid(mem_to_lsu_valid),
     .wen(sen),
     .raddr(laddr),
     .rdata(ldata),
@@ -193,6 +194,7 @@ module top(
 	.exu_valid(exu_valid),
 	.lsu_to_wbu_valid(lsu_to_wbu_valid),
 	.lsu_to_mem_valid(lsu_to_mem_valid),
+	.mem_to_lsu_valid(mem_to_lsu_valid),
 
 	.wbu_ready(wbu_ready),
 	.lsu_ready(lsu_ready)

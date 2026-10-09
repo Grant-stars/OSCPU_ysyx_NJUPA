@@ -19,6 +19,7 @@ module load_store(
     output reg wen,     //写请求
 	input exu_valid,
 	output lsu_to_mem_valid,
+	input mem_to_lsu_valid,
 	output lsu_to_wbu_valid,
 
 	input wbu_ready,
@@ -34,7 +35,7 @@ module load_store(
 
 	//Module bus
 	wire lsu_busy;
-	assign lsu_to_wbu_valid = exu_valid && (lsu_state || (!lsu_state && !valid));
+	assign lsu_to_wbu_valid = exu_valid && ((lsu_state && mem_to_lsu_valid) || (!lsu_state && !valid));
 	assign lsu_ready =(!lsu_busy) && wbu_ready;
 	
 	assign lsu_busy = (!lsu_state && lsu_to_mem_valid) || (lsu_state && !wbu_ready);
@@ -45,7 +46,7 @@ module load_store(
 	always @(*)begin
 		case(lsu_state)
 			IDLE: lsu_next_state = lsu_to_mem_valid ? WAIT : IDLE;
-			WAIT: lsu_next_state = wbu_ready ? IDLE : WAIT;
+			WAIT: lsu_next_state = (mem_to_lsu_valid && wbu_ready) ? IDLE : WAIT;
 		endcase
 	end
 	

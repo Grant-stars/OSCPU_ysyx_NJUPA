@@ -3,7 +3,7 @@ module writeback(
     input w,
     input [4:0] rd,
     input [31:0] data,
-    input [31:0] l_data,
+    input [31:0] lsu_data,
     input [31:0] PC,
     input [2:0] wb_sel,
 	input [31:0] csr_data,
@@ -24,7 +24,7 @@ module writeback(
     always @(*)begin
         case(wb_sel)
             WB_ALU: wdata = data;
-            WB_MEM: wdata = l_data;
+            WB_MEM: wdata = lsu_data;
             WB_PC: wdata = PC+4;
 			WB_CSR: wdata = csr_data;
             default: wdata = 0;

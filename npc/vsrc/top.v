@@ -65,19 +65,18 @@ module top(
   );
 
   //MEM
-  wire [31:0] laddr, saddr, ldata, sdata;
-  wire [7:0] smask;
-  wire sen, mem_to_lsu_valid;
+  wire [31:0] lsu_addr, lsu_rdata, lsu_wdata;
+  wire [7:0] lsu_wmask;
+  wire lsu_wen, mem_to_lsu_valid;
   memory MEM(
 	.clk(clk),
     .lsu_reqValid(lsu_to_mem_valid),
     .lsu_respValid(mem_to_lsu_valid),
-    .wen(sen),
-    .raddr(laddr),
-    .rdata(ldata),
-    .waddr(saddr),
-    .wdata(sdata),
-    .wmask(smask)
+    .lsu_wen(lsu_wen),
+    .lsu_addr(lsu_addr),
+    .lsu_rdata(lsu_rdata),
+    .lsu_wdata(lsu_wdata),
+    .lsu_wmask(lsu_wmask)
   );
 
 
@@ -166,7 +165,7 @@ module top(
 
 
   //LSU:
-  wire [31:0] ldata_to_gpr;
+  wire [31:0] lsu_to_wbu_data;
   wire lsu_to_mem_valid;
   wire lsu_to_wbu_valid;
   wire lsu_ready;
@@ -175,21 +174,17 @@ module top(
 	.rst(rst),
 	.clk(clk),
     .ls_type(ls_type),
+    .addr(outdata),
+    .addr_to_mem(lsu_addr),
 
-    .raddr(outdata),
-    .raddr_to_mem(laddr),
-
-    .waddr(outdata),
-    .waddr_to_mem(saddr),
-
-    .rdata_from_mem(ldata),
-    .rdata_to_gpr(ldata_to_gpr),
+    .rdata_from_mem(lsu_rdata),
+    .rdata_to_wbu(lsu_to_wbu_data),
 
     .wdata_from_gpr(rdata2),
-    .wdata_to_mem(sdata),
+    .wdata_to_mem(lsu_wdata),
 
-    .wmask(smask),
-    .wen(sen),
+    .wmask(lsu_wmask),
+    .wen(lsu_wen),
 	
 	.exu_valid(exu_valid),
 	.lsu_to_wbu_valid(lsu_to_wbu_valid),
@@ -209,7 +204,7 @@ module top(
     .w(w),
     .rd(rd),
     .data(outdata),
-    .l_data(ldata_to_gpr),
+    .lsu_data(lsu_to_wbu_data),
     .PC(pc),
     .wb_sel(wb_sel),
 	.csr_data(csr_wdata_gpr),

@@ -2,29 +2,17 @@ module memory(
 	input clk,
     input lsu_reqValid,
 	output reg lsu_respValid,
-    input wen,
-    input [31:0] raddr,
-    output reg [31:0] rdata,
-    input [31:0] waddr,
-    input [31:0] wdata,
-    input [7:0] wmask
+    input lsu_wen,
+    input [31:0] lsu_addr,
+    output reg [31:0] lsu_rdata,
+    input [31:0] lsu_wdata,
+    input [7:0] lsu_wmask
 );
     always @(posedge clk)begin
-        if(lsu_reqValid && (~wen))begin
-            rdata <= pmem_read(raddr);
-        end
-        else begin
-            rdata <= 0;
-        end
-    end
-
-	always @(posedge clk)begin
-		if(lsu_reqValid && wen)begin
-            pmem_write(waddr, wdata, wmask);
+		lsu_rdata <= (lsu_reqValid && !lsu_wen) ? pmem_read(lsu_addr) : 32'b0;
+		if(lsu_reqValid && lsu_wen)begin
+            pmem_write(lsu_addr, lsu_wdata, lsu_wmask);
 		end
-	end	
-
-	always @(posedge clk)begin
 		lsu_respValid <= lsu_reqValid;
 	end
 endmodule

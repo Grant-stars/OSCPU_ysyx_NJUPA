@@ -1,5 +1,5 @@
 import "DPI-C" function void finish();
-import "DPI-C" function void unimplement();
+import "DPI-C" function void unimplement(input int pc, input int inst);
 import "DPI-C" function void CSRexception();
 import "DPI-C" function void difftest_skip();
 import "DPI-C" function int pmem_read(input int raddr);
@@ -68,6 +68,9 @@ module top(
   wire [31:0] lsu_addr, lsu_rdata, lsu_wdata;
   wire [7:0] lsu_wmask;
   wire lsu_wen, mem_to_lsu_valid;
+
+  wire [31:0] ifu_addr, ifu_rdata;
+  wire ifu_reqValid, ifu_respValid;
   memory MEM(
 	.clk(clk),
     .lsu_reqValid(lsu_to_mem_valid),
@@ -76,7 +79,11 @@ module top(
     .lsu_addr(lsu_addr),
     .lsu_rdata(lsu_rdata),
     .lsu_wdata(lsu_wdata),
-    .lsu_wmask(lsu_wmask)
+    .lsu_wmask(lsu_wmask),
+	.ifu_reqValid(ifu_reqValid),
+	.ifu_respValid(ifu_respValid),
+    .ifu_addr(ifu_addr),
+    .ifu_rdata(ifu_rdata)
   );
 
 
@@ -94,7 +101,11 @@ module top(
     .pc(pc),
     .inst(inst),
 	.valid(ifu_valid),
-	.idu_ready(idu_ready)
+	.idu_ready(idu_ready),
+	.ifu_reqValid(ifu_reqValid),
+	.ifu_respValid(ifu_respValid),
+    .ifu_addr(ifu_addr),
+    .ifu_rdata(ifu_rdata)
   );
 
 

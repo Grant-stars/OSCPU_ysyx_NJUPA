@@ -2,7 +2,9 @@
 #include "svdpi.h"
 #include "Vtop__Dpi.h"
 #include <assert.h>
+#include <cstdint>
 #include <stdio.h>
+#include <sys/types.h>
 #include <time.h>
 #include <sys/time.h>
 #include <stdint.h>
@@ -128,9 +130,8 @@ void finish(){
     return;
 }
 
-void unimplement(){
-	CPU_update();
-	printf(ANSI_FMT("The instruction 0x%.8x: 0x%.8x is not implemented.\n", ANSI_FG_RED), cpu.pc, pmem_read(cpu.pc));
+void unimplement(int pc, int inst){
+	printf(ANSI_FMT("The instruction 0x%.8x: 0x%.8x is not implemented.\n", ANSI_FG_RED), pc, inst); 
 	exception =  true;
 	return ;
 }

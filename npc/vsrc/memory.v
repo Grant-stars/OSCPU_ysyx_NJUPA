@@ -15,7 +15,7 @@ module memory(
     output reg [31:0] ifu_rdata
 );
 
-	parameter [4:0] DELAY = 20;
+	parameter [4:0] DELAY = 10;
     initial begin
 		ifu_rdata = pmem_read(32'h80000000);
 	end
@@ -38,18 +38,18 @@ module memory(
 	//ram:
     always @(posedge clk)begin
 		//lsu_rdata <= (lsu_reqValid && !lsu_wen) ? pmem_read(lsu_addr) : 32'b0;
-		if(lsu_reqValid && !lsu_wen) begin
+		if(lsu_delay[DELAY-2] && !lsu_wen) begin
 			lsu_rdata <= pmem_read(lsu_addr);
 
 		end
-		if(lsu_reqValid && lsu_wen)begin
+		if(lsu_delay[DELAY-2] && lsu_wen)begin
             pmem_write(lsu_addr, lsu_wdata, lsu_wmask);
 		end
 	end
 
 	//rom:
 	always @(posedge clk)begin
-		if(ifu_reqValid) begin
+		if(ifu_delay[DELAY-2]) begin
 			ifu_rdata <= pmem_read(ifu_addr);
 		end
 	end

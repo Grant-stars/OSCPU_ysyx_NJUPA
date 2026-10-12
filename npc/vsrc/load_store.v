@@ -11,46 +11,46 @@ module load_store(
     output reg [7:0] wmask,
     output reg wen,     //写请求
 	input exu_valid,
-	output lsu_to_mem_valid,
-	input mem_to_lsu_valid,
+	output lsu_reqValid,
+	input lsu_respValid,
 	output lsu_to_wbu_valid,
 	input wbu_ready,
 	output lsu_ready
 );
     parameter [4:0] LS_LB = 1, LS_LH = 2 ,LS_LW = 3, LS_LBU = 4, LS_LHU = 5, LS_SB = 6, LS_SH = 7, LS_SW=8;
-	parameter IDLE = 0, WAIT = 1;
+	parameter [1:0] IDLE = 0, WAIT_RESP = 1, WAIT_READY = 2;
     assign addr_to_mem = addr;
 
 	reg valid;
-	assign lsu_to_mem_valid = exu_valid && valid && !mem_to_lsu_valid;
 
-	//Module bus
-	wire lsu_busy;
-	assign lsu_to_wbu_valid = exu_valid && ((lsu_state && mem_to_lsu_valid) || (!lsu_state && !valid));
-	assign lsu_ready =(!lsu_busy) && wbu_ready;
-	
-	assign lsu_busy = (!lsu_state && lsu_to_mem_valid) || (lsu_state && !wbu_ready);
-
-	//SimpleBus fsm
-	reg lsu_state, lsu_next_state;
+	//fsm
+	//IDLE -> WAIT_RESP -> WAIT_READY
+	reg [1:0] lsu_state, lsu_next_state;
 
 	always @(*)begin
 		case(lsu_state)
-			IDLE: lsu_next_state = lsu_to_mem_valid ? WAIT : IDLE;
-			WAIT: lsu_next_state = (mem_to_lsu_valid && wbu_ready) ? IDLE : WAIT;
+			IDLE: lsu_next_state = (exu_valid && valid) ? WAIT_RESP : IDLE;
+			WAIT_RESP: lsu_next_state = lsu_respValid ? (wbu_ready ? IDLE : WAIT_READY) : WAIT_RESP;
+			WAIT_READY: lsu_next_state = wbu_ready ? IDLE : WAIT_READY;
+			default: lsu_next_state = IDLE;
 		endcase
 	end
 	
+	assign lsu_reqValid = (lsu_state==IDLE && exu_valid && valid);
+	assign lsu_ready = lsu_next_state == IDLE;
+	assign lsu_to_wbu_valid = ((lsu_state==WAIT_RESP) && lsu_respValid) || (lsu_state==WAIT_READY);
+
+
 	always@(posedge clk)begin
 		if(rst) lsu_state <= 0;
 		else lsu_state <= lsu_next_state;
 	end
 
-	
+
 
     //其中读操作总是返回按4字节对齐读出的数据, 需要由RTL代码根据读地址选择出需要的部分
     //wmask`中每比特表示`wdata`中1个字节的掩码传递给pmem_write(),如`wmask = 0x3`代表只写入最低2个字节, 内存中的其它字节保持不变
-    always @(*)begin                                        
+    always @(*)begin
         rdata_to_wbu = rdata_from_mem;
         wdata_to_mem = wdata_from_gpr;
         valid = 0;

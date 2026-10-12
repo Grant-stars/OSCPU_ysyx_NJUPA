@@ -57,7 +57,7 @@ module inst_fetch(
 		case(ifu_state)
 			IDLE: ifu_next_state = WAIT_RESP;
 			WAIT_RESP: ifu_next_state = ifu_respValid ? (idu_ready ? IDLE : WAIT_READY) : WAIT_RESP;
-			WAIT_READY: ifu_next_state = idu_ready ? IDLE : WAIT_RESP;
+			WAIT_READY: ifu_next_state = idu_ready ? IDLE : WAIT_READY;
 		endcase
 
 	end

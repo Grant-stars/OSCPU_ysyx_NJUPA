@@ -26,6 +26,7 @@ module load_store(
 	//fsm
 	//IDLE -> WAIT_RESP -> WAIT_READY
 	reg [1:0] lsu_state, lsu_next_state;
+	wire mem_data_ready;
 
 	always @(*)begin
 		case(lsu_state)
@@ -38,8 +39,8 @@ module load_store(
 	
 	assign lsu_reqValid = (lsu_state==IDLE && exu_valid && valid);
 	assign lsu_ready = lsu_next_state == IDLE;
-	assign lsu_to_wbu_valid = ((lsu_state==WAIT_RESP) && lsu_respValid) || (lsu_state==WAIT_READY);
-
+	assign mem_data_ready = ((lsu_state==WAIT_RESP) && lsu_respValid) || (lsu_state==WAIT_READY);
+	assign lsu_to_wbu_valid = exu_valid && ((lsu_state==IDLE && !valid) || mem_data_ready);
 
 	always@(posedge clk)begin
 		if(rst) lsu_state <= 0;

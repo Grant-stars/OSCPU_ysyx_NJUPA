@@ -73,6 +73,7 @@ module top(
   wire ifu_reqValid, ifu_respValid;
   memory MEM(
 	.clk(clk),
+	.rst(rst),
     .lsu_reqValid(lsu_to_mem_valid),
     .lsu_respValid(mem_to_lsu_valid),
     .lsu_wen(lsu_wen),

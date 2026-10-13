@@ -15,7 +15,7 @@ module inst_fetch(
     input [31:0] ifu_rdata
 );
     parameter [1:0] JUMP_NOP = 0, JUMP_JALR = 1, JUMP_JAL =2, JUMP_CB = 3;
-	parameter IDLE = 0, WAIT_RESP = 1, WAIT_READY = 2;
+	parameter IDLE = 0, WAIT_RESP = 1, WAIT_READY = 2, DELAY = 3;
     initial begin
         pc = 32'h80000000;
 		inst_reg = pmem_read(32'h80000000);
@@ -48,22 +48,22 @@ module inst_fetch(
 	assign inst = ((ifu_state==WAIT_RESP) && (ifu_respValid)) ? ifu_rdata : inst_reg;
 
     // fsm
-	//IDLE -> WAIT_RESP -> WAIT_READY
+	//IDLE -> DELAY -> WAIT_RESP -> WAIT_READY
     reg [1:0] ifu_state, ifu_next_state;
 	wire inst_finish /*verilator public*/;
 	assign inst_finish = ifu_next_state == IDLE;
 
 	always @(*)begin
 		case(ifu_state)
-			IDLE: ifu_next_state = WAIT_RESP;
+			IDLE: ifu_next_state = DELAY;
+			DELAY: ifu_next_state = WAIT_RESP;
 			WAIT_RESP: ifu_next_state = ifu_respValid ? (idu_ready ? IDLE : WAIT_READY) : WAIT_RESP;
 			WAIT_READY: ifu_next_state = idu_ready ? IDLE : WAIT_READY;
 		endcase
-
 	end
 
     assign valid = ((ifu_state==WAIT_RESP) && ifu_respValid) || (ifu_state==WAIT_READY);
-	assign ifu_reqValid = ifu_state==IDLE;
+	assign ifu_reqValid = ifu_state==DELAY;
 
 
     always@(posedge clk)begin

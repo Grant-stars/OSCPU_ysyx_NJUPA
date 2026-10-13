@@ -12,34 +12,36 @@ module load_store(
     output reg wen,     //写请求
 	input exu_valid,
 	output lsu_reqValid,
+	input lsu_reqReady,
 	input lsu_respValid,
+	output reg lsu_respReady,
 	output lsu_to_wbu_valid,
 	input wbu_ready,
 	output lsu_ready
 );
     parameter [4:0] LS_LB = 1, LS_LH = 2 ,LS_LW = 3, LS_LBU = 4, LS_LHU = 5, LS_SB = 6, LS_SH = 7, LS_SW=8;
-	parameter [1:0] IDLE = 0, WAIT_RESP = 1, WAIT_READY = 2;
+	parameter [1:0] IDLE = 0, WAIT_READY = 1, WAIT_RESP = 2, WAIT_HANDLE = 3;
     assign addr_to_mem = addr;
 
 	reg valid;
 
 	//fsm
-	//IDLE -> WAIT_RESP -> WAIT_READY
+	//IDLE -> WAIT_READY -> WAIT_RESP -> WAIT_HANDLE
 	reg [1:0] lsu_state, lsu_next_state;
 	wire mem_data_ready;
 
 	always @(*)begin
 		case(lsu_state)
-			IDLE: lsu_next_state = (exu_valid && valid) ? WAIT_RESP : IDLE;
-			WAIT_RESP: lsu_next_state = lsu_respValid ? (wbu_ready ? IDLE : WAIT_READY) : WAIT_RESP;
-			WAIT_READY: lsu_next_state = wbu_ready ? IDLE : WAIT_READY;
-			default: lsu_next_state = IDLE;
+			IDLE: lsu_next_state = (exu_valid && valid) ? (lsu_reqReady ? WAIT_RESP : WAIT_READY): IDLE;
+			WAIT_READY: lsu_next_state = lsu_reqReady ? WAIT_RESP : WAIT_READY;
+			WAIT_RESP: lsu_next_state = (lsu_respValid && lsu_respReady) ? (wbu_ready ? IDLE : WAIT_HANDLE) : WAIT_RESP;
+			WAIT_HANDLE: lsu_next_state = wbu_ready ? IDLE : WAIT_HANDLE;
 		endcase
 	end
 	
-	assign lsu_reqValid = (lsu_state==IDLE && exu_valid && valid);
+	assign lsu_reqValid = ((lsu_state==IDLE || lsu_state==WAIT_READY) && exu_valid && valid);
 	assign lsu_ready = lsu_next_state == IDLE;
-	assign mem_data_ready = ((lsu_state==WAIT_RESP) && lsu_respValid) || (lsu_state==WAIT_READY);
+	assign mem_data_ready = ((lsu_state==WAIT_RESP) && lsu_respValid && lsu_respReady) || (lsu_state==WAIT_HANDLE);
 	assign lsu_to_wbu_valid = exu_valid && ((lsu_state==IDLE && !valid) || mem_data_ready);
 
 	always@(posedge clk)begin
@@ -47,6 +49,19 @@ module load_store(
 		else lsu_state <= lsu_next_state;
 	end
 
+	reg lsu_respReady_reg;
+	always @(posedge clk)begin
+		if(rst)begin
+			lsu_respReady <= 0;
+			lsu_respReady_reg <= 0;
+		end
+		else begin
+			if(lsu_state==WAIT_RESP && lsu_respValid && !lsu_respReady_reg && !lsu_respReady) lsu_respReady_reg <= 1;
+			else lsu_respReady_reg <= 0;
+			lsu_respReady <= lsu_respReady_reg;
+		end
+
+	end
 
 
     //其中读操作总是返回按4字节对齐读出的数据, 需要由RTL代码根据读地址选择出需要的部分

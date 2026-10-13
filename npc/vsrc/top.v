@@ -75,7 +75,9 @@ module top(
 	.clk(clk),
 	.rst(rst),
     .lsu_reqValid(lsu_reqValid),
+	.lsu_reqReady(lsu_reqReady),
     .lsu_respValid(lsu_respValid),
+	.lsu_respReady(lsu_respReady),
     .lsu_wen(lsu_wen),
     .lsu_addr(lsu_addr),
     .lsu_rdata(lsu_rdata),
@@ -182,7 +184,7 @@ module top(
 
   //LSU:
   wire [31:0] lsu_to_wbu_data;
-  wire lsu_reqValid, lsu_respValid;
+  wire lsu_reqValid, lsu_reqReady, lsu_respValid, lsu_respReady;
   wire lsu_ready, lsu_to_wbu_valid;
 
   load_store LSU(
@@ -204,7 +206,9 @@ module top(
 	.exu_valid(exu_valid),
 	.lsu_to_wbu_valid(lsu_to_wbu_valid),
 	.lsu_reqValid(lsu_reqValid),
+	.lsu_reqReady(lsu_reqReady),
 	.lsu_respValid(lsu_respValid),
+	.lsu_respReady(lsu_respReady),
 
 	.wbu_ready(wbu_ready),
 	.lsu_ready(lsu_ready)

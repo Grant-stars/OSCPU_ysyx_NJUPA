@@ -2,7 +2,9 @@ module memory(
 	input clk,
 	input rst,
     input lsu_reqValid,
-	output reg lsu_respValid,
+	output reg lsu_reqReady,
+	output lsu_respValid,
+	input lsu_respReady,
     input lsu_wen,
     input [31:0] lsu_addr,
     output reg [31:0] lsu_rdata,
@@ -29,7 +31,7 @@ module memory(
 			lfsr <= 4'b1;
 		end
 		else begin
-			if((ifu_reqValid && ifu_reqReady)|| lsu_reqValid)begin
+			if((ifu_reqValid && ifu_reqReady) || (lsu_reqValid && lsu_reqReady))begin
 				lfsr <= {lfsr[3]^lfsr[0],lfsr[3:1]};
 			end
 		end
@@ -60,13 +62,13 @@ module memory(
 
 			//lsu
 			if (lsu_delay_counter==0)begin
-				if (lsu_reqValid)begin
+				if (lsu_reqValid && lsu_reqReady)begin
 					lsu_delay_counter <= lsu_delay_counter + 1;
 				end
 			end
 			else begin
 				if(lsu_delay_counter==delay)begin
-					lsu_delay_counter <= 0;
+					if(lsu_respReady) lsu_delay_counter <= 0;
 				end
 				else begin
 					lsu_delay_counter <= lsu_delay_counter + 1;
@@ -83,10 +85,24 @@ module memory(
 		end
 		else begin
 			if(ifu_delay_counter==0 && ifu_reqValid && !ifu_reqReady_reg && !ifu_reqReady) ifu_reqReady_reg <= 1;
-			else ifu_reqReady_reg<= 0;
+			else ifu_reqReady_reg <= 0;
 			ifu_reqReady <= ifu_reqReady_reg;
 		end
 	end
+
+	reg lsu_reqReady_reg;
+	always @(posedge clk)begin
+		if(rst)begin
+			lsu_reqReady <= 0;
+			lsu_reqReady_reg <= 0;
+		end
+		else begin
+			if(lsu_delay_counter==0 && lsu_reqValid && !lsu_reqReady_reg && !lsu_reqReady) lsu_reqReady_reg <= 1;
+			else lsu_reqReady_reg <= 0;
+			lsu_reqReady <= lsu_reqReady_reg;
+		end
+	end
+
 
 	assign ifu_respValid = ifu_delay_counter==delay;
 	assign lsu_respValid = lsu_delay_counter==delay;

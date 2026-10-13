@@ -18,26 +18,26 @@ module load_store(
 	output lsu_ready
 );
     parameter [4:0] LS_LB = 1, LS_LH = 2 ,LS_LW = 3, LS_LBU = 4, LS_LHU = 5, LS_SB = 6, LS_SH = 7, LS_SW=8;
-	parameter [1:0] IDLE = 0, WAIT_RESP = 1, WAIT_READY = 2, DELAY = 3;
+	parameter [1:0] IDLE = 0, WAIT_RESP = 1, WAIT_READY = 2;
     assign addr_to_mem = addr;
 
 	reg valid;
 
 	//fsm
-	//IDLE -> DELAY -> WAIT_RESP -> WAIT_READY
+	//IDLE -> WAIT_RESP -> WAIT_READY
 	reg [1:0] lsu_state, lsu_next_state;
 	wire mem_data_ready;
 
 	always @(*)begin
 		case(lsu_state)
-			IDLE: lsu_next_state = (exu_valid && valid) ? DELAY: IDLE;
-			DELAY:lsu_next_state = WAIT_RESP;
+			IDLE: lsu_next_state = (exu_valid && valid) ? WAIT_RESP : IDLE;
 			WAIT_RESP: lsu_next_state = lsu_respValid ? (wbu_ready ? IDLE : WAIT_READY) : WAIT_RESP;
 			WAIT_READY: lsu_next_state = wbu_ready ? IDLE : WAIT_READY;
+			default: lsu_next_state = IDLE;
 		endcase
 	end
 	
-	assign lsu_reqValid = (lsu_state==DELAY&& exu_valid && valid);
+	assign lsu_reqValid = (lsu_state==IDLE && exu_valid && valid);
 	assign lsu_ready = lsu_next_state == IDLE;
 	assign mem_data_ready = ((lsu_state==WAIT_RESP) && lsu_respValid) || (lsu_state==WAIT_READY);
 	assign lsu_to_wbu_valid = exu_valid && ((lsu_state==IDLE && !valid) || mem_data_ready);

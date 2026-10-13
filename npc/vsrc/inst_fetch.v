@@ -12,7 +12,7 @@ module inst_fetch(
 	output ifu_reqValid,
 	input ifu_reqReady,
 	input ifu_respValid,
-	output ifu_respReady,
+	output reg ifu_respReady,
     output [31:0] ifu_addr,
     input [31:0] ifu_rdata
 );
@@ -47,7 +47,7 @@ module inst_fetch(
 		inst_reg <= inst;
 	end
 
-	assign inst = ((ifu_state==WAIT_RESP) && (ifu_respValid)) ? ifu_rdata : inst_reg;
+	assign inst = ((ifu_state==WAIT_RESP) && (ifu_respValid && ifu_respReady)) ? ifu_rdata : inst_reg;
 
     // fsm
 	//IDLE -> WAIT_READY -> WAIT_RESP -> WAIT_HANDLE
@@ -59,14 +59,26 @@ module inst_fetch(
 		case(ifu_state)
 			IDLE: ifu_next_state = ifu_reqReady ? WAIT_RESP : WAIT_READY;
 			WAIT_READY: ifu_next_state = ifu_reqReady ? WAIT_RESP : WAIT_READY;
-			WAIT_RESP: ifu_next_state = ifu_respValid ? (idu_ready ? IDLE : WAIT_HANDLE) : WAIT_RESP;
+			WAIT_RESP: ifu_next_state = (ifu_respValid && ifu_respReady) ? (idu_ready ? IDLE : WAIT_HANDLE) : WAIT_RESP;
 			WAIT_HANDLE: ifu_next_state = idu_ready ? IDLE : WAIT_HANDLE;
 		endcase
 	end
 
-    assign valid = ((ifu_state==WAIT_RESP) && ifu_respValid) || (ifu_state==WAIT_HANDLE);
-	assign ifu_reqValid = (ifu_state==IDLE) || (ifu_next_state==WAIT_READY);
-	assign ifu_respReady = (ifu_state==WAIT_RESP);
+    assign valid = ((ifu_state==WAIT_RESP) && ifu_respValid && ifu_respReady) || (ifu_state==WAIT_HANDLE);
+	assign ifu_reqValid = (ifu_state==IDLE) || (ifu_state==WAIT_READY);
+	reg ifu_respReady_reg;
+	always @(posedge clk)begin
+		if(rst)begin
+			ifu_respReady <= 0;
+			ifu_respReady_reg <= 0;
+		end
+		else begin
+			if(ifu_state==WAIT_RESP && ifu_respValid && !ifu_respReady_reg && !ifu_respReady) ifu_respReady_reg <= 1;
+			else ifu_respReady_reg <= 0;
+			ifu_respReady <= ifu_respReady_reg;
+		end
+
+	end
 
 
     always@(posedge clk)begin

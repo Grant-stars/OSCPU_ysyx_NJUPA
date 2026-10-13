@@ -15,41 +15,82 @@ module memory(
     output reg [31:0] ifu_rdata
 );
 
-	parameter [4:0] DELAY = 10;
     initial begin
 		ifu_rdata = pmem_read(32'h80000000);
 	end
 
 	//delay:
-	reg [DELAY - 1 :0] ifu_delay, lsu_delay;
+	reg [3:0] lfsr;
+	wire [3:0] delay;
 	always @(posedge clk)begin
-		if(rst) begin
-			ifu_delay <= 0;
-			lsu_delay <= 0;
+		if(rst)begin
+			lfsr <= 4'b1;
 		end
 		else begin
-			ifu_delay <= { ifu_delay[DELAY-2:0], ifu_reqValid };
-			lsu_delay <= { lsu_delay[DELAY-2:0], lsu_reqValid };
+			if(ifu_reqValid || lsu_reqValid)begin
+				lfsr <= {lfsr[3]^lfsr[0],lfsr[3:1]};
+			end
 		end
 	end
-	assign ifu_respValid = ifu_delay[DELAY-1];
-	assign lsu_respValid = lsu_delay[DELAY-1];
+	assign delay = lfsr > 1 ? lfsr : 2;
+	
+	reg [3:0] lsu_delay_counter, ifu_delay_counter;
+	always @(posedge clk)begin
+		if(rst)begin
+			lsu_delay_counter <= 0;
+			ifu_delay_counter <= 0;
+		end
+		else begin
+			//ifu
+			if (ifu_delay_counter==0)begin
+				if (ifu_reqValid)begin
+					ifu_delay_counter <= ifu_delay_counter + 1;
+				end
+			end
+			else begin
+				if(ifu_delay_counter==delay)begin
+					ifu_delay_counter <= 0;
+				end
+				else begin
+					ifu_delay_counter <= ifu_delay_counter + 1;
+				end
+			end
+
+			//lsu
+			if (lsu_delay_counter==0)begin
+				if (lsu_reqValid)begin
+					lsu_delay_counter <= lsu_delay_counter + 1;
+				end
+			end
+			else begin
+				if(lsu_delay_counter==delay)begin
+					lsu_delay_counter <= 0;
+				end
+				else begin
+					lsu_delay_counter <= lsu_delay_counter + 1;
+				end
+			end
+		end
+	end
+
+	assign ifu_respValid = ifu_delay_counter==delay;
+	assign lsu_respValid = lsu_delay_counter==delay;
 
 	//ram:
     always @(posedge clk)begin
 		//lsu_rdata <= (lsu_reqValid && !lsu_wen) ? pmem_read(lsu_addr) : 32'b0;
-		if(lsu_delay[DELAY-2] && !lsu_wen) begin
+		if((lsu_delay_counter==delay-1) && !lsu_wen) begin
 			lsu_rdata <= pmem_read(lsu_addr);
 
 		end
-		if(lsu_delay[DELAY-2] && lsu_wen)begin
+		if((lsu_delay_counter==delay-1) && lsu_wen)begin
             pmem_write(lsu_addr, lsu_wdata, lsu_wmask);
 		end
 	end
 
 	//rom:
 	always @(posedge clk)begin
-		if(ifu_delay[DELAY-2]) begin
+		if((ifu_delay_counter==delay-1)) begin
 			ifu_rdata <= pmem_read(ifu_addr);
 		end
 	end

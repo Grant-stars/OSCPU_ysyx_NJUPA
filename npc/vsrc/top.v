@@ -70,7 +70,7 @@ module top(
   wire lsu_wen;
 
   wire [31:0] ifu_addr, ifu_rdata;
-  wire ifu_reqValid, ifu_respValid;
+  wire ifu_reqValid, ifu_reqReady, ifu_respValid, ifu_respReady;
   memory MEM(
 	.clk(clk),
 	.rst(rst),
@@ -82,7 +82,9 @@ module top(
     .lsu_wdata(lsu_wdata),
     .lsu_wmask(lsu_wmask),
 	.ifu_reqValid(ifu_reqValid),
+	.ifu_reqReady(ifu_reqReady),
 	.ifu_respValid(ifu_respValid),
+	.ifu_respReady(ifu_respReady),
     .ifu_addr(ifu_addr),
     .ifu_rdata(ifu_rdata)
   );
@@ -104,7 +106,9 @@ module top(
 	.valid(ifu_valid),
 	.idu_ready(idu_ready),
 	.ifu_reqValid(ifu_reqValid),
+	.ifu_reqReady(ifu_reqReady),
 	.ifu_respValid(ifu_respValid),
+	.ifu_respReady(ifu_respReady),
     .ifu_addr(ifu_addr),
     .ifu_rdata(ifu_rdata)
   );

@@ -10,12 +10,14 @@ module inst_fetch(
 	input idu_ready,
 
 	output ifu_reqValid,
+	input ifu_reqReady,
 	input ifu_respValid,
+	output ifu_respReady,
     output [31:0] ifu_addr,
     input [31:0] ifu_rdata
 );
     parameter [1:0] JUMP_NOP = 0, JUMP_JALR = 1, JUMP_JAL =2, JUMP_CB = 3;
-	parameter IDLE = 0, WAIT_RESP = 1, WAIT_READY = 2;
+	parameter IDLE = 0, WAIT_READY = 1, WAIT_RESP = 2, WAIT_HANDLE = 3;
     initial begin
         pc = 32'h80000000;
 		inst_reg = pmem_read(32'h80000000);
@@ -48,22 +50,23 @@ module inst_fetch(
 	assign inst = ((ifu_state==WAIT_RESP) && (ifu_respValid)) ? ifu_rdata : inst_reg;
 
     // fsm
-	//IDLE -> WAIT_RESP -> WAIT_READY
+	//IDLE -> WAIT_READY -> WAIT_RESP -> WAIT_HANDLE
     reg [1:0] ifu_state, ifu_next_state;
 	wire inst_finish /*verilator public*/;
 	assign inst_finish = ifu_next_state == IDLE;
 
 	always @(*)begin
 		case(ifu_state)
-			IDLE: ifu_next_state = WAIT_RESP;
-			WAIT_RESP: ifu_next_state = ifu_respValid ? (idu_ready ? IDLE : WAIT_READY) : WAIT_RESP;
-			WAIT_READY: ifu_next_state = idu_ready ? IDLE : WAIT_READY;
+			IDLE: ifu_next_state = ifu_reqReady ? WAIT_RESP : WAIT_READY;
+			WAIT_READY: ifu_next_state = ifu_reqReady ? WAIT_RESP : WAIT_READY;
+			WAIT_RESP: ifu_next_state = ifu_respValid ? (idu_ready ? IDLE : WAIT_HANDLE) : WAIT_RESP;
+			WAIT_HANDLE: ifu_next_state = idu_ready ? IDLE : WAIT_HANDLE;
 		endcase
-
 	end
 
-    assign valid = ((ifu_state==WAIT_RESP) && ifu_respValid) || (ifu_state==WAIT_READY);
-	assign ifu_reqValid = ifu_state==IDLE;
+    assign valid = ((ifu_state==WAIT_RESP) && ifu_respValid) || (ifu_state==WAIT_HANDLE);
+	assign ifu_reqValid = (ifu_state==IDLE) || (ifu_next_state==WAIT_READY);
+	assign ifu_respReady = (ifu_state==WAIT_RESP);
 
 
     always@(posedge clk)begin

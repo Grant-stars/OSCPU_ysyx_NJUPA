@@ -10,7 +10,9 @@ module memory(
     input [7:0] lsu_wmask,
 
 	input ifu_reqValid,
+	output ifu_reqReady,
 	output ifu_respValid,
+	input ifu_respReady,
     input [31:0] ifu_addr,
     output reg [31:0] ifu_rdata
 );
@@ -27,7 +29,7 @@ module memory(
 			lfsr <= 4'b1;
 		end
 		else begin
-			if(ifu_reqValid || lsu_reqValid)begin
+			if((ifu_reqValid && ifu_reqReady)|| lsu_reqValid)begin
 				lfsr <= {lfsr[3]^lfsr[0],lfsr[3:1]};
 			end
 		end
@@ -43,13 +45,13 @@ module memory(
 		else begin
 			//ifu
 			if (ifu_delay_counter==0)begin
-				if (ifu_reqValid)begin
+				if (ifu_reqValid && ifu_reqReady)begin
 					ifu_delay_counter <= ifu_delay_counter + 1;
 				end
 			end
 			else begin
 				if(ifu_delay_counter==delay)begin
-					ifu_delay_counter <= 0;
+					if(ifu_respReady) ifu_delay_counter <= 0;
 				end
 				else begin
 					ifu_delay_counter <= ifu_delay_counter + 1;
@@ -72,6 +74,8 @@ module memory(
 			end
 		end
 	end
+
+	assign ifu_reqReady = ifu_delay_counter==0;
 
 	assign ifu_respValid = ifu_delay_counter==delay;
 	assign lsu_respValid = lsu_delay_counter==delay;

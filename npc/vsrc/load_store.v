@@ -15,6 +15,7 @@ module load_store(
 	input lsu_reqReady,
 	input lsu_respValid,
 	output reg lsu_respReady,
+	input lsu_error,
 	output lsu_to_wbu_valid,
 	input wbu_ready,
 	output lsu_ready
@@ -34,14 +35,14 @@ module load_store(
 		case(lsu_state)
 			IDLE: lsu_next_state = (exu_valid && valid) ? (lsu_reqReady ? WAIT_RESP : WAIT_READY): IDLE;
 			WAIT_READY: lsu_next_state = lsu_reqReady ? WAIT_RESP : WAIT_READY;
-			WAIT_RESP: lsu_next_state = (lsu_respValid && lsu_respReady) ? (wbu_ready ? IDLE : WAIT_HANDLE) : WAIT_RESP;
+			WAIT_RESP: lsu_next_state = (lsu_respValid && lsu_respReady && !lsu_error) ? (wbu_ready ? IDLE : WAIT_HANDLE) : WAIT_RESP;
 			WAIT_HANDLE: lsu_next_state = wbu_ready ? IDLE : WAIT_HANDLE;
 		endcase
 	end
 	
 	assign lsu_reqValid = ((lsu_state==IDLE || lsu_state==WAIT_READY) && exu_valid && valid);
 	assign lsu_ready = lsu_next_state == IDLE;
-	assign mem_data_ready = ((lsu_state==WAIT_RESP) && lsu_respValid && lsu_respReady) || (lsu_state==WAIT_HANDLE);
+	assign mem_data_ready = ((lsu_state==WAIT_RESP) && lsu_respValid && lsu_respReady && !lsu_error) || (lsu_state==WAIT_HANDLE);
 	assign lsu_to_wbu_valid = exu_valid && ((lsu_state==IDLE && !valid) || mem_data_ready);
 
 	always@(posedge clk)begin

@@ -5,6 +5,7 @@ module memory(
 	output reg lsu_reqReady,
 	output lsu_respValid,
 	input lsu_respReady,
+	output lsu_error,
     input lsu_wen,
     input [31:0] lsu_addr,
     output reg [31:0] lsu_rdata,
@@ -15,6 +16,7 @@ module memory(
 	output reg ifu_reqReady,
 	output ifu_respValid,
 	input ifu_respReady,
+	output ifu_error,
     input [31:0] ifu_addr,
     output reg [31:0] ifu_rdata
 );
@@ -106,6 +108,9 @@ module memory(
 
 	assign ifu_respValid = ifu_delay_counter==delay;
 	assign lsu_respValid = lsu_delay_counter==delay;
+
+	assign lsu_error = 0;
+	assign ifu_error = 0;
 
 	//ram:
     always @(posedge clk)begin

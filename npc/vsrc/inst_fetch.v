@@ -9,16 +9,36 @@ module inst_fetch(
 	output valid,
 	input idu_ready,
 
-	output ifu_reqValid,
-	input ifu_reqReady,
-	input ifu_respValid,
-	output reg ifu_respReady,
-	input ifu_error,
-    output [31:0] ifu_addr,
-    input [31:0] ifu_rdata
+	//AXI4-Lite
+	//AR
+	output [31:0] araddr,
+	output arvalid,
+	input arready,
+
+	//R
+	input [31:0] rdata,
+	input [1:0] rresp,
+	input rvalid,
+	output reg rready,
+
+	//AW
+	output [31:0] awaddr,
+	output awvalid,
+	input awready,
+
+	//W
+	output [31:0] wdata,
+	output [3:0] wstrb,
+	output wvalid,
+	input wready,
+
+	//B
+	input [1:0] bresp,
+	input bvalid,
+	output bready
 );
     parameter [1:0] JUMP_NOP = 0, JUMP_JALR = 1, JUMP_JAL =2, JUMP_CB = 3;
-	parameter IDLE = 0, WAIT_READY = 1, WAIT_RESP = 2, WAIT_HANDLE = 3;
+	parameter IDLE = 0, WAIT_AR_READY = 1, WAIT_R = 2, WAIT_HANDLE = 3;
     initial begin
         pc = 32'h80000000;
 		inst_reg = pmem_read(32'h80000000);
@@ -42,43 +62,56 @@ module inst_fetch(
         end
     end
 
-    assign ifu_addr = pc;
+    assign araddr = pc;
 	reg [31:0] inst_reg;
 	always@ (posedge clk)begin
 		inst_reg <= inst;
 	end
 
-	assign inst = ((ifu_state==WAIT_RESP) && (ifu_respValid && ifu_respReady && !ifu_error)) ? ifu_rdata : inst_reg;
+	assign inst = ((ifu_state==WAIT_R) && (rvalid && rready && !(|rresp))) ? rdata : inst_reg;
 
     // fsm
-	//IDLE -> WAIT_READY -> WAIT_RESP -> WAIT_HANDLE
+	//IDLE -> WAIT_AR_READY -> WAIT_R -> WAIT_HANDLE
     reg [1:0] ifu_state, ifu_next_state;
 	wire inst_finish /*verilator public*/;
 	assign inst_finish = ifu_next_state == IDLE;
 
 	always @(*)begin
 		case(ifu_state)
-			IDLE: ifu_next_state = ifu_reqReady ? WAIT_RESP : WAIT_READY;
-			WAIT_READY: ifu_next_state = ifu_reqReady ? WAIT_RESP : WAIT_READY;
-			WAIT_RESP: ifu_next_state = (ifu_respValid && ifu_respReady && !ifu_error) ? (idu_ready ? IDLE : WAIT_HANDLE) : WAIT_RESP;
+			IDLE: ifu_next_state = arready ? WAIT_R : WAIT_AR_READY;
+			WAIT_AR_READY: ifu_next_state = arready ? WAIT_R : WAIT_AR_READY;
+			WAIT_R: ifu_next_state = (rvalid && rready && !(|rresp)) ? (idu_ready ? IDLE : WAIT_HANDLE) : WAIT_R;
 			WAIT_HANDLE: ifu_next_state = idu_ready ? IDLE : WAIT_HANDLE;
 		endcase
 	end
 
-    assign valid = ((ifu_state==WAIT_RESP) && ifu_respValid && ifu_respReady && !ifu_error) || (ifu_state==WAIT_HANDLE);
-	assign ifu_reqValid = (ifu_state==IDLE) || (ifu_state==WAIT_READY);
-	reg ifu_respReady_reg;
+    assign valid = ((ifu_state==WAIT_R) && rvalid && rready && !(|rresp)) || (ifu_state==WAIT_HANDLE);
+	assign arvalid = (ifu_state==IDLE) || (ifu_state==WAIT_AR_READY);
+	reg rready_reg;
 	always @(posedge clk)begin
 		if(rst)begin
-			ifu_respReady <= 0;
-			ifu_respReady_reg <= 0;
+			rready <= 0;
+			rready_reg <= 0;
 		end
 		else begin
-			if(ifu_state==WAIT_RESP && ifu_respValid && !ifu_respReady_reg && !ifu_respReady) ifu_respReady_reg <= 1;
-			else ifu_respReady_reg <= 0;
-			ifu_respReady <= ifu_respReady_reg;
+			if(ifu_state==WAIT_R && rvalid && !rready_reg && !rready) rready_reg <= 1;
+			else rready_reg <= 0;
+			rready <= rready_reg;
 		end
+	end
 
+	assign awaddr = 0;
+	assign awvalid = 0;
+	assign wdata = 0;
+	assign wstrb = 0;
+	assign wvalid = 0;
+	assign bready = 0;
+
+	always @(*)begin
+		sig_assert(awready);
+		sig_assert(~wready);
+		sig_assert(~(|bresp));
+		sig_assert(~bvalid);
 	end
 
 

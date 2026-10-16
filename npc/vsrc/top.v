@@ -1,6 +1,7 @@
 import "DPI-C" function void finish();
 import "DPI-C" function void unimplement(input int pc, input int inst);
 import "DPI-C" function void CSRexception();
+import "DPI-C" function void sig_assert(input bit condition);
 import "DPI-C" function void difftest_skip();
 import "DPI-C" function int pmem_read(input int raddr);
 import "DPI-C" function void pmem_write(
@@ -65,12 +66,34 @@ module top(
   );
 
   //MEM
+  //AXI4-Lite
   wire [31:0] lsu_addr, lsu_rdata, lsu_wdata;
   wire [7:0] lsu_wmask;
   wire lsu_wen;
 
-  wire [31:0] ifu_addr, ifu_rdata;
-  wire ifu_reqValid, ifu_reqReady, ifu_respValid, ifu_respReady, ifu_error;
+  //ifu
+	//R
+	wire [31:0] ifu_araddr;
+	wire ifu_arvalid, ifu_arready;
+
+	//AR
+	wire [31:0] ifu_rdata;
+	wire [1:0] ifu_rresp;
+	wire ifu_rvalid, ifu_rready;
+
+	//AW
+	wire [31:0] ifu_awaddr;
+	wire ifu_awvalid, ifu_awready;
+
+	//W
+	wire [31:0] ifu_wdata;
+	wire [3:0] ifu_wstrb;
+	wire ifu_wvalid, ifu_wready;
+
+	//B
+	wire [1:0] ifu_bresp;
+	wire ifu_bvalid, ifu_bready;
+
   memory MEM(
 	.clk(clk),
 	.rst(rst),
@@ -84,13 +107,25 @@ module top(
     .lsu_rdata(lsu_rdata),
     .lsu_wdata(lsu_wdata),
     .lsu_wmask(lsu_wmask),
-	.ifu_reqValid(ifu_reqValid),
-	.ifu_reqReady(ifu_reqReady),
-	.ifu_respValid(ifu_respValid),
-	.ifu_respReady(ifu_respReady),
-	.ifu_error(ifu_error),
-    .ifu_addr(ifu_addr),
-    .ifu_rdata(ifu_rdata)
+
+	.ifu_araddr(ifu_araddr),
+	.ifu_arvalid(ifu_arvalid),
+	.ifu_arready(ifu_arready),
+	.ifu_rdata(ifu_rdata),
+	.ifu_rresp(ifu_rresp),
+	.ifu_rvalid(ifu_rvalid),
+	.ifu_rready(ifu_rready),
+	.ifu_awaddr(ifu_awaddr),
+	.ifu_awvalid(ifu_awvalid),
+	.ifu_awready(ifu_awready),
+	.ifu_wdata(ifu_wdata),
+	.ifu_wstrb(ifu_wstrb),
+	.ifu_wvalid(ifu_wvalid),
+	.ifu_wready(ifu_wready),
+	.ifu_bresp(ifu_bresp),
+	.ifu_bvalid(ifu_bvalid),
+	.ifu_bready(ifu_bready)
+
   );
 
 
@@ -109,14 +144,24 @@ module top(
     .inst(inst),
 	.valid(ifu_valid),
 	.idu_ready(idu_ready),
-	.ifu_reqValid(ifu_reqValid),
-	.ifu_reqReady(ifu_reqReady),
-	.ifu_respValid(ifu_respValid),
-	.ifu_respReady(ifu_respReady),
-	.ifu_error(ifu_error),
-    .ifu_addr(ifu_addr),
-    .ifu_rdata(ifu_rdata)
-  );
+	.araddr(ifu_araddr),
+	.arvalid(ifu_arvalid),
+	.arready(ifu_arready),
+	.rdata(ifu_rdata),
+	.rresp(ifu_rresp),
+	.rvalid(ifu_rvalid),
+	.rready(ifu_rready),
+	.awaddr(ifu_awaddr),
+	.awvalid(ifu_awvalid),
+	.awready(ifu_awready),
+	.wdata(ifu_wdata),
+	.wstrb(ifu_wstrb),
+	.wvalid(ifu_wvalid),
+	.wready(ifu_wready),
+	.bresp(ifu_bresp),
+	.bvalid(ifu_bvalid),
+	.bready(ifu_bready)
+	  );
 
 
   //IDU

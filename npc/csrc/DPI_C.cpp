@@ -143,6 +143,14 @@ void CSRexception(){
 	return ;
 }
 
+void sig_assert(svBit condition){
+	if(!condition){
+		printf("\"condition\" Assertion failed!\n");
+		exception =  true;
+	}
+	return;
+}
+
 void difftest_skip(){
 #ifdef CONFIG_DIFFTEST 
 difftest_skip_ref();

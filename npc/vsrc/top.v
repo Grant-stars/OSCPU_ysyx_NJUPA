@@ -67,9 +67,6 @@ module top(
 
   //MEM
   //AXI4-Lite
-  wire [31:0] lsu_addr, lsu_rdata, lsu_wdata;
-  wire [7:0] lsu_wmask;
-  wire lsu_wen;
 
   //ifu
 	//R
@@ -94,19 +91,33 @@ module top(
 	wire [1:0] ifu_bresp;
 	wire ifu_bvalid, ifu_bready;
 
+  //lsu
+	//R
+	wire [31:0] lsu_araddr;
+	wire lsu_arvalid, lsu_arready;
+
+	//AR
+	wire [31:0] lsu_rdata;
+	wire [1:0] lsu_rresp;
+	wire lsu_rvalid, lsu_rready;
+
+	//AW
+	wire [31:0] lsu_awaddr;
+	wire lsu_awvalid, lsu_awready;
+
+	//W
+	wire [31:0] lsu_wdata;
+	wire [3:0] lsu_wstrb;
+	wire lsu_wvalid, lsu_wready;
+
+	//B
+	wire [1:0] lsu_bresp;
+	wire lsu_bvalid, lsu_bready;
+
+
   memory MEM(
 	.clk(clk),
 	.rst(rst),
-    .lsu_reqValid(lsu_reqValid),
-	.lsu_reqReady(lsu_reqReady),
-    .lsu_respValid(lsu_respValid),
-	.lsu_respReady(lsu_respReady),
-	.lsu_error(lsu_error),
-    .lsu_wen(lsu_wen),
-    .lsu_addr(lsu_addr),
-    .lsu_rdata(lsu_rdata),
-    .lsu_wdata(lsu_wdata),
-    .lsu_wmask(lsu_wmask),
 
 	.ifu_araddr(ifu_araddr),
 	.ifu_arvalid(ifu_arvalid),
@@ -124,8 +135,25 @@ module top(
 	.ifu_wready(ifu_wready),
 	.ifu_bresp(ifu_bresp),
 	.ifu_bvalid(ifu_bvalid),
-	.ifu_bready(ifu_bready)
-
+	.ifu_bready(ifu_bready),
+	
+	.lsu_araddr(lsu_araddr),
+	.lsu_arvalid(lsu_arvalid),
+	.lsu_arready(lsu_arready),
+	.lsu_rdata(lsu_rdata),
+	.lsu_rresp(lsu_rresp),
+	.lsu_rvalid(lsu_rvalid),
+	.lsu_rready(lsu_rready),
+	.lsu_awaddr(lsu_awaddr),
+	.lsu_awvalid(lsu_awvalid),
+	.lsu_awready(lsu_awready),
+	.lsu_wdata(lsu_wdata),
+	.lsu_wstrb(lsu_wstrb),
+	.lsu_wvalid(lsu_wvalid),
+	.lsu_wready(lsu_wready),
+	.lsu_bresp(lsu_bresp),
+	.lsu_bvalid(lsu_bvalid),
+	.lsu_bready(lsu_bready)
   );
 
 
@@ -144,6 +172,7 @@ module top(
     .inst(inst),
 	.valid(ifu_valid),
 	.idu_ready(idu_ready),
+
 	.araddr(ifu_araddr),
 	.arvalid(ifu_arvalid),
 	.arready(ifu_arready),
@@ -232,7 +261,6 @@ module top(
 
   //LSU:
   wire [31:0] lsu_to_wbu_data;
-  wire lsu_reqValid, lsu_reqReady, lsu_respValid, lsu_respReady, lsu_error;
   wire lsu_ready, lsu_to_wbu_valid;
 
   load_store LSU(
@@ -240,27 +268,30 @@ module top(
 	.clk(clk),
     .ls_type(ls_type),
     .addr(outdata),
-    .addr_to_mem(lsu_addr),
-
-    .rdata_from_mem(lsu_rdata),
     .rdata_to_wbu(lsu_to_wbu_data),
-
     .wdata_from_gpr(rdata2),
-    .wdata_to_mem(lsu_wdata),
-
-    .wmask(lsu_wmask),
-    .wen(lsu_wen),
-	
 	.exu_valid(exu_valid),
 	.lsu_to_wbu_valid(lsu_to_wbu_valid),
-	.lsu_reqValid(lsu_reqValid),
-	.lsu_reqReady(lsu_reqReady),
-	.lsu_respValid(lsu_respValid),
-	.lsu_respReady(lsu_respReady),
-	.lsu_error(lsu_error),
-
 	.wbu_ready(wbu_ready),
-	.lsu_ready(lsu_ready)
+	.lsu_ready(lsu_ready),
+
+	.araddr(lsu_araddr),
+	.arvalid(lsu_arvalid),
+	.arready(lsu_arready),
+	.rdata(lsu_rdata),
+	.rresp(lsu_rresp),
+	.rvalid(lsu_rvalid),
+	.rready(lsu_rready),
+	.awaddr(lsu_awaddr),
+	.awvalid(lsu_awvalid),
+	.awready(lsu_awready),
+	.wdata(lsu_wdata),
+	.wstrb(lsu_wstrb),
+	.wvalid(lsu_wvalid),
+	.wready(lsu_wready),
+	.bresp(lsu_bresp),
+	.bvalid(lsu_bvalid),
+	.bready(lsu_bready)
   );
 
 

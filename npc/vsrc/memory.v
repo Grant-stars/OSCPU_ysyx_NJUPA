@@ -1,18 +1,7 @@
 module memory(
 	input clk,
 	input rst,
-    input lsu_reqValid,
-	output reg lsu_reqReady,
-	output lsu_respValid,
-	input lsu_respReady,
-	output lsu_error,
-    input lsu_wen,
-    input [31:0] lsu_addr,
-    output reg [31:0] lsu_rdata,
-    input [31:0] lsu_wdata,
-    input [7:0] lsu_wmask,
-
-	//AXI4-Lite
+    //AXI4-Lite
 	
 	//ifu
 	//AR
@@ -40,8 +29,38 @@ module memory(
 	//B
 	output [1:0] ifu_bresp,
 	output ifu_bvalid,
-	input ifu_bready
+	input ifu_bready,
+
+	//lsu
+	//AR
+	input [31:0] lsu_araddr,
+	input lsu_arvalid,
+	output lsu_arready,
+
+	//R
+	output reg [31:0] lsu_rdata,
+	output [1:0] lsu_rresp,
+	output lsu_rvalid,
+	input lsu_rready,
+
+	//AW
+	input [31:0] lsu_awaddr,
+	input lsu_awvalid,
+	output lsu_awready,
+
+	//W
+	input [31:0] lsu_wdata,
+	input [3:0] lsu_wstrb,
+	input lsu_wvalid,
+	output lsu_wready,
+
+	//B
+	output [1:0] lsu_bresp,
+	output lsu_bvalid,
+	input lsu_bready
 	);
+
+
 
     initial begin
 		ifu_rdata = pmem_read(32'h80000000);
@@ -129,70 +148,82 @@ module memory(
 	end
 	
 
-	//delay:
-	reg [3:0] lfsr;
-	wire [3:0] delay;
-	always @(posedge clk)begin
-		if(rst)begin
-			lfsr <= 4'b1;
-		end
-		else begin
-			if(lsu_reqValid && lsu_reqReady)begin
-				lfsr <= {lfsr[3]^lfsr[0],lfsr[3:1]};
-			end
+    //lsu_fsm
+	//lsu_R
+	//lsu_AR_IDLE -> lsu_R -> lsu_WAIT_RREADY
+	parameter [1:0] lsu_AR_IDLE = 0, lsu_READ = 1, lsu_WAIT_RREADY = 2;
+    reg [1:0] lsu_state, lsu_next_state;
+	reg [31:0] lsu_araddr_reg;
+
+	always @(*)begin
+		case(lsu_state)
+			lsu_AR_IDLE: lsu_next_state = lsu_arvalid ? lsu_READ : lsu_AR_IDLE;
+			lsu_READ: lsu_next_state = lsu_WAIT_RREADY;
+			lsu_WAIT_RREADY: lsu_next_state = lsu_rready ? lsu_AR_IDLE : lsu_WAIT_RREADY;
+			default: lsu_next_state = lsu_AR_IDLE;
+		endcase
+	end
+
+	assign lsu_arready = lsu_state==lsu_AR_IDLE;
+	assign lsu_rresp = 0;
+	assign lsu_rvalid = lsu_state==lsu_WAIT_RREADY;
+
+    always@ (posedge clk)begin
+       if(rst) lsu_state <= 0;
+       else lsu_state <= lsu_next_state;
+    end
+
+	always@ (posedge clk)begin
+		if(lsu_state==lsu_AR_IDLE && lsu_next_state==lsu_READ)begin
+			lsu_araddr_reg <= lsu_araddr;
 		end
 	end
-	assign delay = lfsr > 1 ? lfsr : 2;
+
+	always @(posedge clk)begin
+		if(lsu_state==lsu_READ && lsu_next_state==lsu_WAIT_RREADY) begin
+			lsu_rdata <= pmem_read(lsu_araddr_reg);
+		end
+	end
+
+	//lsu_W
+	//lsu_AW_IDLE -> lsu_WAIT_W -> lsu_W -> lsu_B
+	parameter [1:0] lsu_AW_IDLE = 0, lsu_WAIT_W = 1, lsu_W = 2, lsu_B = 3;
+	reg [1:0] lsu_w_state, lsu_w_next_state;
+	reg [31:0] lsu_awaddr_reg, lsu_wdata_reg;
+	reg [3:0] lsu_wstrb_reg;
+
+	always @(*)begin
+		case(lsu_w_state)
+			lsu_AW_IDLE: lsu_w_next_state = lsu_awvalid ? lsu_WAIT_W : lsu_AW_IDLE;
+			lsu_WAIT_W: lsu_w_next_state = lsu_wvalid ? lsu_W : lsu_WAIT_W;
+			lsu_W: lsu_w_next_state = lsu_B;
+			lsu_B: lsu_w_next_state = lsu_bready ? lsu_AW_IDLE : lsu_B;
+		endcase
+	end
+
+	assign lsu_awready = lsu_w_state==lsu_AW_IDLE;
+	assign lsu_wready = lsu_w_state==lsu_WAIT_W;
+	assign lsu_bresp = 0;
+	assign lsu_bvalid = lsu_w_state==lsu_B;
 	
-	reg [3:0] lsu_delay_counter;
-	always @(posedge clk)begin
-		if(rst)begin
-			lsu_delay_counter <= 0;
+    always@ (posedge clk)begin
+       if(rst) lsu_w_state <= 0;
+       else lsu_w_state <= lsu_w_next_state;
+    end
+
+	always@ (posedge clk)begin
+		if(lsu_w_state==lsu_AW_IDLE && lsu_w_next_state==lsu_WAIT_W)begin
+			lsu_awaddr_reg <= lsu_awaddr;
 		end
-		else begin
-			//lsu
-			if (lsu_delay_counter==0)begin
-				if (lsu_reqValid && lsu_reqReady)begin
-					lsu_delay_counter <= lsu_delay_counter + 1;
-				end
-			end
-			else begin
-				if(lsu_delay_counter==delay)begin
-					if(lsu_respReady) lsu_delay_counter <= 0;
-				end
-				else begin
-					lsu_delay_counter <= lsu_delay_counter + 1;
-				end
-			end
+		if(lsu_w_state==lsu_WAIT_W && lsu_w_next_state==lsu_W)begin
+			lsu_wdata_reg <= lsu_wdata;
+			lsu_wstrb_reg <= lsu_wstrb;
 		end
 	end
 
-	reg lsu_reqReady_reg;
-	always @(posedge clk)begin
-		if(rst)begin
-			lsu_reqReady <= 0;
-			lsu_reqReady_reg <= 0;
-		end
-		else begin
-			if(lsu_delay_counter==0 && lsu_reqValid && !lsu_reqReady_reg && !lsu_reqReady) lsu_reqReady_reg <= 1;
-			else lsu_reqReady_reg <= 0;
-			lsu_reqReady <= lsu_reqReady_reg;
-		end
-	end
-
-
-	assign lsu_respValid = lsu_delay_counter==delay;
-	assign lsu_error = 0;
-
-	//ram:
-    always @(posedge clk)begin
-		//lsu_rdata <= (lsu_reqValid && !lsu_wen) ? pmem_read(lsu_addr) : 32'b0;
-		if((lsu_delay_counter==delay-1) && !lsu_wen) begin
-			lsu_rdata <= pmem_read(lsu_addr);
-
-		end
-		if((lsu_delay_counter==delay-1) && lsu_wen)begin
-            pmem_write(lsu_addr, lsu_wdata, lsu_wmask);
+	always@ (posedge clk)begin
+		if(lsu_w_state==lsu_W && lsu_w_next_state==lsu_B)begin
+            pmem_write(lsu_awaddr_reg, lsu_wdata_reg, {4'b0, lsu_wstrb_reg});
 		end
 	end
 

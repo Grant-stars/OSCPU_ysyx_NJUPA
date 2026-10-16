@@ -115,7 +115,7 @@ module top(
 	wire lsu_bvalid, lsu_bready;
 
 
-  memory MEM(
+  memory_access MEM(
 	.clk(clk),
 	.rst(rst),
 
@@ -190,7 +190,7 @@ module top(
 	.bresp(ifu_bresp),
 	.bvalid(ifu_bvalid),
 	.bready(ifu_bready)
-	  );
+  );
 
 
   //IDU

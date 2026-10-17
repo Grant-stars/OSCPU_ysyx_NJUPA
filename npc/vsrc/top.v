@@ -65,7 +65,7 @@ module top(
 	.wbu_valid(wbu_valid)
   );
 
-  //MEM
+  //ARBITER
   //AXI4-Lite
 
   //ifu
@@ -115,46 +115,108 @@ module top(
 	wire lsu_bvalid, lsu_bready;
 
 
-  memory_access MEM(
+  memory_access arbiter(
 	.clk(clk),
 	.rst(rst),
 
-	.ifu_araddr(ifu_araddr),
-	.ifu_arvalid(ifu_arvalid),
-	.ifu_arready(ifu_arready),
-	.ifu_rdata(ifu_rdata),
-	.ifu_rresp(ifu_rresp),
-	.ifu_rvalid(ifu_rvalid),
-	.ifu_rready(ifu_rready),
-	.ifu_awaddr(ifu_awaddr),
-	.ifu_awvalid(ifu_awvalid),
-	.ifu_awready(ifu_awready),
-	.ifu_wdata(ifu_wdata),
-	.ifu_wstrb(ifu_wstrb),
-	.ifu_wvalid(ifu_wvalid),
-	.ifu_wready(ifu_wready),
-	.ifu_bresp(ifu_bresp),
-	.ifu_bvalid(ifu_bvalid),
-	.ifu_bready(ifu_bready),
+	.araddr0(ifu_araddr),
+	.arvalid0(ifu_arvalid),
+	.arready0(ifu_arready),
+	.rdata0(ifu_rdata),
+	.rresp0(ifu_rresp),
+	.rvalid0(ifu_rvalid),
+	.rready0(ifu_rready),
+	.awaddr0(ifu_awaddr),
+	.awvalid0(ifu_awvalid),
+	.awready0(ifu_awready),
+	.wdata0(ifu_wdata),
+	.wstrb0(ifu_wstrb),
+	.wvalid0(ifu_wvalid),
+	.wready0(ifu_wready),
+	.bresp0(ifu_bresp),
+	.bvalid0(ifu_bvalid),
+	.bready0(ifu_bready),
 	
-	.lsu_araddr(lsu_araddr),
-	.lsu_arvalid(lsu_arvalid),
-	.lsu_arready(lsu_arready),
-	.lsu_rdata(lsu_rdata),
-	.lsu_rresp(lsu_rresp),
-	.lsu_rvalid(lsu_rvalid),
-	.lsu_rready(lsu_rready),
-	.lsu_awaddr(lsu_awaddr),
-	.lsu_awvalid(lsu_awvalid),
-	.lsu_awready(lsu_awready),
-	.lsu_wdata(lsu_wdata),
-	.lsu_wstrb(lsu_wstrb),
-	.lsu_wvalid(lsu_wvalid),
-	.lsu_wready(lsu_wready),
-	.lsu_bresp(lsu_bresp),
-	.lsu_bvalid(lsu_bvalid),
-	.lsu_bready(lsu_bready)
+	.araddr1(lsu_araddr),
+	.arvalid1(lsu_arvalid),
+	.arready1(lsu_arready),
+	.rdata1(lsu_rdata),
+	.rresp1(lsu_rresp),
+	.rvalid1(lsu_rvalid),
+	.rready1(lsu_rready),
+	.awaddr1(lsu_awaddr),
+	.awvalid1(lsu_awvalid),
+	.awready1(lsu_awready),
+	.wdata1(lsu_wdata),
+	.wstrb1(lsu_wstrb),
+	.wvalid1(lsu_wvalid),
+	.wready1(lsu_wready),
+	.bresp1(lsu_bresp),
+	.bvalid1(lsu_bvalid),
+	.bready1(lsu_bready),
+
+	.araddr(m_araddr),
+	.arvalid(m_arvalid),
+	.arready(m_arready),
+	.rdata(m_rdata),
+	.rresp(m_rresp),
+	.rvalid(m_rvalid),
+	.rready(m_rready),
+	.awaddr(m_awaddr),
+	.awvalid(m_awvalid),
+	.awready(m_awready),
+	.wdata(m_wdata),
+	.wstrb(m_wstrb),
+	.wvalid(m_wvalid),
+	.wready(m_wready),
+	.bresp(m_bresp),
+	.bvalid(m_bvalid),
+	.bready(m_bready)
+
   );
+
+  //MEM
+  wire [31:0] m_araddr;
+  wire m_arvalid;
+  wire m_arready;
+  wire reg [31:0] m_rdata;
+  wire [1:0] m_rresp;
+  wire m_rvalid;
+  wire m_rready;
+  wire [31:0] m_awaddr;
+  wire m_awvalid;
+  wire m_awready;
+  wire [31:0] m_wdata;
+  wire [3:0] m_wstrb;
+  wire m_wvalid;
+  wire m_wready;
+  wire [1:0] m_bresp;
+  wire m_bvalid;
+  wire m_bready;
+	
+
+  memory MEM(
+	 .clk(clk),
+	 .rst(rst),
+	 .araddr(m_araddr),
+	 .arvalid(m_arvalid),
+	 .arready(m_arready),
+	 .rdata(m_rdata),
+	 .rresp(m_rresp),
+	 .rvalid(m_rvalid),
+	 .rready(m_rready),
+	 .awaddr(m_awaddr),
+	 .awvalid(m_awvalid),
+	 .awready(m_awready),
+	 .wdata(m_wdata),
+	 .wstrb(m_wstrb),
+	 .wvalid(m_wvalid),
+	 .wready(m_wready),
+	 .bresp(m_bresp),
+	 .bvalid(m_bvalid),
+	 .bready(m_bready)
+  );
+
 
 
   //IFU:

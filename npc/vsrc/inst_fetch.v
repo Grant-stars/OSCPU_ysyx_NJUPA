@@ -107,8 +107,9 @@ module inst_fetch(
 	assign wvalid = 0;
 	assign bready = 0;
 
+	wire _unused = awready; //consume unused signal
+
 	always @(*)begin
-		sig_assert(awready);
 		sig_assert(~wready);
 		sig_assert(~(|bresp));
 		sig_assert(~bvalid);

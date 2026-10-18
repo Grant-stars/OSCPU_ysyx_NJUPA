@@ -1,7 +1,8 @@
 import "DPI-C" function void finish();
 import "DPI-C" function void unimplement(input int pc, input int inst);
 import "DPI-C" function void CSRexception();
-import "DPI-C" function void sig_assert(input bit condition);
+import "DPI-C" function void sig_assert(input bit condition, input string s);
+import "DPI-C" function void uart_put(input int waddr, input int wdata, input byte wmask);
 import "DPI-C" function void difftest_skip();
 import "DPI-C" function int pmem_read(input int raddr);
 import "DPI-C" function void pmem_write(
@@ -115,6 +116,7 @@ module top(
 	wire lsu_bvalid, lsu_bready;
 
 
+	wire Bus_access;
   memory_access arbiter(
 	.clk(clk),
 	.rst(rst),
@@ -155,25 +157,150 @@ module top(
 	.bvalid1(lsu_bvalid),
 	.bready1(lsu_bready),
 
-	.araddr(m_araddr),
-	.arvalid(m_arvalid),
-	.arready(m_arready),
-	.rdata(m_rdata),
-	.rresp(m_rresp),
-	.rvalid(m_rvalid),
-	.rready(m_rready),
-	.awaddr(m_awaddr),
-	.awvalid(m_awvalid),
-	.awready(m_awready),
-	.wdata(m_wdata),
-	.wstrb(m_wstrb),
-	.wvalid(m_wvalid),
-	.wready(m_wready),
-	.bresp(m_bresp),
-	.bvalid(m_bvalid),
-	.bready(m_bready)
+	.araddr(Xbar_araddr),
+	.arvalid(Xbar_arvalid),
+	.arready(Xbar_arready),
+	.rdata(Xbar_rdata),
+	.rresp(Xbar_rresp),
+	.rvalid(Xbar_rvalid),
+	.rready(Xbar_rready),
+	.awaddr(Xbar_awaddr),
+	.awvalid(Xbar_awvalid),
+	.awready(Xbar_awready),
+	.wdata(Xbar_wdata),
+	.wstrb(Xbar_wstrb),
+	.wvalid(Xbar_wvalid),
+	.wready(Xbar_wready),
+	.bresp(Xbar_bresp),
+	.bvalid(Xbar_bvalid),
+	.bready(Xbar_bready),
+
+	.access(Bus_access)
 
   );
+
+	
+  //Xbar
+  wire [31:0] Xbar_araddr;
+  wire Xbar_arvalid;
+  wire Xbar_arready;
+  wire reg [31:0] Xbar_rdata;
+  wire [1:0] Xbar_rresp;
+  wire Xbar_rvalid;
+  wire Xbar_rready;
+  wire [31:0] Xbar_awaddr;
+  wire Xbar_awvalid;
+  wire Xbar_awready;
+  wire [31:0] Xbar_wdata;
+  wire [3:0] Xbar_wstrb;
+  wire Xbar_wvalid;
+  wire Xbar_wready;
+  wire [1:0] Xbar_bresp;
+  wire Xbar_bvalid;
+  wire Xbar_bready;
+	
+  Xbar Xbar(
+	.clk(clk),
+	.rst(rst),
+	.access(Bus_access),
+
+	.araddr(Xbar_araddr),
+	.arvalid(Xbar_arvalid),
+	.arready(Xbar_arready),
+	.rdata(Xbar_rdata),
+	.rresp(Xbar_rresp),
+	.rvalid(Xbar_rvalid),
+	.rready(Xbar_rready),
+	.awaddr(Xbar_awaddr),
+	.awvalid(Xbar_awvalid),
+	.awready(Xbar_awready),
+	.wdata(Xbar_wdata),
+	.wstrb(Xbar_wstrb),
+	.wvalid(Xbar_wvalid),
+	.wready(Xbar_wready),
+	.bresp(Xbar_bresp),
+	.bvalid(Xbar_bvalid),
+	.bready(Xbar_bready),
+
+	.araddr0(uart_araddr),
+	.arvalid0(uart_arvalid),
+	.arready0(uart_arready),
+	.rdata0(uart_rdata),
+	.rresp0(uart_rresp),
+	.rvalid0(uart_rvalid),
+	.rready0(uart_rready),
+	.awaddr0(uart_awaddr),
+	.awvalid0(uart_awvalid),
+	.awready0(uart_awready),
+	.wdata0(uart_wdata),
+	.wstrb0(uart_wstrb),
+	.wvalid0(uart_wvalid),
+	.wready0(uart_wready),
+	.bresp0(uart_bresp),
+	.bvalid0(uart_bvalid),
+	.bready0(uart_bready),
+	
+	.araddr1(m_araddr),
+	.arvalid1(m_arvalid),
+	.arready1(m_arready),
+	.rdata1(m_rdata),
+	.rresp1(m_rresp),
+	.rvalid1(m_rvalid),
+	.rready1(m_rready),
+	.awaddr1(m_awaddr),
+	.awvalid1(m_awvalid),
+	.awready1(m_awready),
+	.wdata1(m_wdata),
+	.wstrb1(m_wstrb),
+	.wvalid1(m_wvalid),
+	.wready1(m_wready),
+	.bresp1(m_bresp),
+	.bvalid1(m_bvalid),
+	.bready1(m_bready)
+  );
+
+
+ //uart:
+  wire [31:0] uart_araddr;
+  wire uart_arvalid;
+  wire uart_arready;
+  wire reg [31:0] uart_rdata;
+  wire [1:0] uart_rresp;
+  wire uart_rvalid;
+  wire uart_rready;
+  wire [31:0] uart_awaddr;
+  wire uart_awvalid;
+  wire uart_awready;
+  wire [31:0] uart_wdata;
+  wire [3:0] uart_wstrb;
+  wire uart_wvalid;
+  wire uart_wready;
+  wire [1:0] uart_bresp;
+  wire uart_bvalid;
+  wire uart_bready;
+	
+  uart UART(
+	 .clk(clk),
+	 .rst(rst),
+	 .araddr(uart_araddr),
+	 .arvalid(uart_arvalid),
+	 .arready(uart_arready),
+	 .rdata(uart_rdata),
+	 .rresp(uart_rresp),
+	 .rvalid(uart_rvalid),
+	 .rready(uart_rready),
+	 .awaddr(uart_awaddr),
+	 .awvalid(uart_awvalid),
+	 .awready(uart_awready),
+	 .wdata(uart_wdata),
+	 .wstrb(uart_wstrb),
+	 .wvalid(uart_wvalid),
+	 .wready(uart_wready),
+	 .bresp(uart_bresp),
+	 .bvalid(uart_bvalid),
+	 .bready(uart_bready)
+  );
+
 
   //MEM
   wire [31:0] m_araddr;
@@ -194,7 +321,6 @@ module top(
   wire m_bvalid;
   wire m_bready;
 	
-
   memory MEM(
 	 .clk(clk),
 	 .rst(rst),
@@ -216,6 +342,7 @@ module top(
 	 .bvalid(m_bvalid),
 	 .bready(m_bready)
   );
+
 
 
 

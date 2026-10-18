@@ -54,7 +54,9 @@ module memory_access(
 	input wready,
 	input [1:0] bresp,
 	input bvalid,
-	output bready
+	output bready,
+
+	output access
 	);
 
 	wire access0, access1;
@@ -77,9 +79,11 @@ module memory_access(
 		endcase
 	end
 
+	assign access = arbiter_state==IDLE && arbiter_next_state==BUSY;
+
 	always @(posedge clk)begin
 		if(rst) grant <= 0;
-		else if(arbiter_state==IDLE && arbiter_next_state==BUSY)begin
+		else if(access)begin
 			grant <= access1 && !access0;
 		end
 	end
@@ -90,10 +94,10 @@ module memory_access(
 		else arbiter_state <= arbiter_next_state;
 	end
 
-	assign araddr = idle ? 0 : (grant ? araddr1 : araddr0);
+	assign araddr = idle ? ((access1 && !access0) ? araddr1 : araddr0) : (grant ? araddr1 : araddr0);
 	assign arvalid = idle ? 0 : (grant ? arvalid1: arvalid0);
 	assign rready = idle ? 0 : (grant ? rready1: rready0);
-	assign awaddr = idle ? 0 : (grant ? awaddr1: awaddr0);
+	assign awaddr = idle ? ((access1 && !access0) ? awaddr1 : awaddr0) : (grant ? awaddr1: awaddr0);
 	assign awvalid = idle ? 0 : (grant ? awvalid1: awvalid0);
 	assign wdata = idle ? 0 : (grant ? wdata1: wdata0);
 	assign wstrb = idle ? 0 : (grant ? wstrb1: wstrb0);

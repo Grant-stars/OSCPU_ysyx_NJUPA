@@ -2,7 +2,6 @@
 #include "svdpi.h"
 #include "Vtop__Dpi.h"
 #include <assert.h>
-#include <cstdint>
 #include <stdio.h>
 #include <sys/types.h>
 #include <time.h>
@@ -79,9 +78,11 @@ int pmem_read(volatile int raddr) {
     // 总是读取地址为`raddr & ~0x3u`的4字节返回
 
 	//读取设备时，difftest执行结果以dut的状态为准
+	/*
     //串口
     if(raddr==SERIAL_PORT) { IFDEF(CONFIG_DIFFTEST, difftest_skip_ref()); return 0; }
-    //时钟
+    */
+	//时钟
     if(raddr>=RTC_ADDR && raddr<=RTC_ADDR+0xffff){
 		IFDEF(CONFIG_DIFFTEST, difftest_skip_ref());
 
@@ -110,9 +111,11 @@ void pmem_write(int waddr, int wdata, char wmask) {
     // 如`wmask = 0x3`代表只写入最低2个字节, 内存中的其它字节保持不变 
 
 	//写设备时，difftest执行结果以dut的状态为准
+	/*
     //串口
     if(waddr==SERIAL_PORT) { IFDEF(CONFIG_DIFFTEST, difftest_skip_ref()); putc((char)(uint32_t)wdata, stderr); return; }
-    //时钟
+    */
+	//时钟
     if(waddr>=RTC_ADDR && waddr<=RTC_ADDR+0xffff) {IFDEF(CONFIG_DIFFTEST, difftest_skip_ref()); return;}
 	is_out_of_bound(waddr & ~0x3u);
 
@@ -143,12 +146,16 @@ void CSRexception(){
 	return ;
 }
 
-void sig_assert(svBit condition){
+void sig_assert(svBit condition, const char * s){
 	if(!condition){
-		printf("\"condition\" Assertion failed!\n");
+		printf("%s Assertion failed!\n", s);
 		exception =  true;
 	}
 	return;
+}
+
+void uart_put(int waddr, int wdata, char wmask){
+	putc((char)(uint32_t)wdata, stderr);
 }
 
 void difftest_skip(){

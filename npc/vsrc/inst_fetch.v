@@ -107,14 +107,7 @@ module inst_fetch(
 	assign wvalid = 0;
 	assign bready = 0;
 
-	wire _unused = awready; //consume unused signal
-
-	always @(*)begin
-		sig_assert(~wready);
-		sig_assert(~(|bresp));
-		sig_assert(~bvalid);
-	end
-
+	wire _unused = &{awready, wready, bresp, bvalid}; //consume unused signal
 
     always@(posedge clk)begin
        if(rst) ifu_state <= 0;

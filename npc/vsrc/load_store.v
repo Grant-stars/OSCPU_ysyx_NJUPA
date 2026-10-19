@@ -83,8 +83,8 @@ module load_store(
 	assign bready = lsu_state==WAIT_B;
 
 	always @(*)begin
-		sig_assert(~(|bresp), "bresp");
-		sig_assert(~(|rresp), "rresp");
+		if(bvalid && bready) sig_assert(~(|bresp), "bresp");
+		if(rvalid && rready) sig_assert(~(|rresp), "rresp");
 	end
 
 	assign lsu_ready = lsu_next_state == IDLE;

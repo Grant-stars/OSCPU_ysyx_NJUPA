@@ -81,7 +81,7 @@ int pmem_read(volatile int raddr) {
 	/*
     //串口
     if(raddr==SERIAL_PORT) { IFDEF(CONFIG_DIFFTEST, difftest_skip_ref()); return 0; }
-    */
+    
 	//时钟
     if(raddr>=RTC_ADDR && raddr<=RTC_ADDR+0xffff){
 		IFDEF(CONFIG_DIFFTEST, difftest_skip_ref());
@@ -96,6 +96,7 @@ int pmem_read(volatile int raddr) {
         if(raddr==UPTIME_ADDR) { uint64_t us = get_time(); return (uint32_t)us; }
         if(raddr==UPTIME_ADDR+4){ uint64_t us = get_time(); return us>>32; }
     }
+	*/
 	is_out_of_bound(raddr & ~0x3u);
     return *(int*)(MEM+(raddr & ~0x3u)-CONFIG_MBASE);
 }
@@ -114,9 +115,10 @@ void pmem_write(int waddr, int wdata, char wmask) {
 	/*
     //串口
     if(waddr==SERIAL_PORT) { IFDEF(CONFIG_DIFFTEST, difftest_skip_ref()); putc((char)(uint32_t)wdata, stderr); return; }
-    */
+   
 	//时钟
     if(waddr>=RTC_ADDR && waddr<=RTC_ADDR+0xffff) {IFDEF(CONFIG_DIFFTEST, difftest_skip_ref()); return;}
+	*/
 	is_out_of_bound(waddr & ~0x3u);
 
     uint32_t raw_data = *(uint32_t*)(MEM+(waddr & ~0x3u)-CONFIG_MBASE);

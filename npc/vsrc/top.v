@@ -240,23 +240,41 @@ module top(
 	.bvalid0(uart_bvalid),
 	.bready0(uart_bready),
 	
-	.araddr1(m_araddr),
-	.arvalid1(m_arvalid),
-	.arready1(m_arready),
-	.rdata1(m_rdata),
-	.rresp1(m_rresp),
-	.rvalid1(m_rvalid),
-	.rready1(m_rready),
-	.awaddr1(m_awaddr),
-	.awvalid1(m_awvalid),
-	.awready1(m_awready),
-	.wdata1(m_wdata),
-	.wstrb1(m_wstrb),
-	.wvalid1(m_wvalid),
-	.wready1(m_wready),
-	.bresp1(m_bresp),
-	.bvalid1(m_bvalid),
-	.bready1(m_bready)
+	.araddr1(clint_araddr),
+	.arvalid1(clint_arvalid),
+	.arready1(clint_arready),
+	.rdata1(clint_rdata),
+	.rresp1(clint_rresp),
+	.rvalid1(clint_rvalid),
+	.rready1(clint_rready),
+	.awaddr1(clint_awaddr),
+	.awvalid1(clint_awvalid),
+	.awready1(clint_awready),
+	.wdata1(clint_wdata),
+	.wstrb1(clint_wstrb),
+	.wvalid1(clint_wvalid),
+	.wready1(clint_wready),
+	.bresp1(clint_bresp),
+	.bvalid1(clint_bvalid),
+	.bready1(clint_bready),
+
+	.araddr2(m_araddr),
+	.arvalid2(m_arvalid),
+	.arready2(m_arready),
+	.rdata2(m_rdata),
+	.rresp2(m_rresp),
+	.rvalid2(m_rvalid),
+	.rready2(m_rready),
+	.awaddr2(m_awaddr),
+	.awvalid2(m_awvalid),
+	.awready2(m_awready),
+	.wdata2(m_wdata),
+	.wstrb2(m_wstrb),
+	.wvalid2(m_wvalid),
+	.wready2(m_wready),
+	.bresp2(m_bresp),
+	.bvalid2(m_bvalid),
+	.bready2(m_bready)
   );
 
 
@@ -299,6 +317,48 @@ module top(
 	 .bresp(uart_bresp),
 	 .bvalid(uart_bvalid),
 	 .bready(uart_bready)
+  );
+
+
+ //CLINT:
+  wire [31:0] clint_araddr;
+  wire clint_arvalid;
+  wire clint_arready;
+  wire reg [31:0] clint_rdata;
+  wire [1:0] clint_rresp;
+  wire clint_rvalid;
+  wire clint_rready;
+  wire [31:0] clint_awaddr;
+  wire clint_awvalid;
+  wire clint_awready;
+  wire [31:0] clint_wdata;
+  wire [3:0] clint_wstrb;
+  wire clint_wvalid;
+  wire clint_wready;
+  wire [1:0] clint_bresp;
+  wire clint_bvalid;
+  wire clint_bready;
+	
+  CLINT CLINT(
+	 .clk(clk),
+	 .rst(rst),
+	 .araddr(clint_araddr),
+	 .arvalid(clint_arvalid),
+	 .arready(clint_arready),
+	 .rdata(clint_rdata),
+	 .rresp(clint_rresp),
+	 .rvalid(clint_rvalid),
+	 .rready(clint_rready),
+	 .awaddr(clint_awaddr),
+	 .awvalid(clint_awvalid),
+	 .awready(clint_awready),
+	 .wdata(clint_wdata),
+	 .wstrb(clint_wstrb),
+	 .wvalid(clint_wvalid),
+	 .wready(clint_wready),
+	 .bresp(clint_bresp),
+	 .bvalid(clint_bvalid),
+	 .bready(clint_bready)
   );
 
 

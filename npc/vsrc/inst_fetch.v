@@ -9,17 +9,23 @@ module inst_fetch(
 	output valid,
 	input idu_ready,
 
-	//AXI4-Lite
+	//AXI4
 	//AR
 	output [31:0] araddr,
 	output arvalid,
 	input arready,
+	output [3:0] arid,
+	output [7:0] arlen,
+	output [2:0] arsize,
+	output [1:0] arburst,
 
 	//R
 	input [31:0] rdata,
 	input [1:0] rresp,
 	input rvalid,
 	output reg rready,
+	input rlast,
+	input [3:0] rid,
 
 	//AW
 	output [31:0] awaddr,
@@ -68,7 +74,7 @@ module inst_fetch(
 		inst_reg <= inst;
 	end
 
-	assign inst = ((ifu_state==WAIT_R) && (rvalid && rready && !(|rresp))) ? rdata : inst_reg;
+	assign inst = ((ifu_state==WAIT_R) && (rvalid && rready && rlast && !(|rresp))) ? rdata : inst_reg;
 
     // fsm
 	//IDLE -> WAIT_AR_READY -> WAIT_R -> WAIT_HANDLE
@@ -80,12 +86,12 @@ module inst_fetch(
 		case(ifu_state)
 			IDLE: ifu_next_state = arready ? WAIT_R : WAIT_AR_READY;
 			WAIT_AR_READY: ifu_next_state = arready ? WAIT_R : WAIT_AR_READY;
-			WAIT_R: ifu_next_state = (rvalid && rready && !(|rresp)) ? (idu_ready ? IDLE : WAIT_HANDLE) : WAIT_R;
+			WAIT_R: ifu_next_state = (rvalid && rready && !(|rresp) && rlast) ? (idu_ready ? IDLE : WAIT_HANDLE) : WAIT_R;
 			WAIT_HANDLE: ifu_next_state = idu_ready ? IDLE : WAIT_HANDLE;
 		endcase
 	end
 
-    assign valid = ((ifu_state==WAIT_R) && rvalid && rready && !(|rresp)) || (ifu_state==WAIT_HANDLE);
+    assign valid = ((ifu_state==WAIT_R) && rvalid && rlast && rready && !(|rresp)) || (ifu_state==WAIT_HANDLE);
 	assign arvalid = (ifu_state==IDLE) || (ifu_state==WAIT_AR_READY);
 	reg rready_reg;
 	always @(posedge clk)begin
@@ -100,6 +106,11 @@ module inst_fetch(
 		end
 	end
 
+	assign arid = 0;
+	assign arlen = 0;
+	assign arsize = 3'b10;
+	assign arburst = 2'b01;
+
 	assign awaddr = 0;
 	assign awvalid = 0;
 	assign wdata = 0;
@@ -107,7 +118,7 @@ module inst_fetch(
 	assign wvalid = 0;
 	assign bready = 0;
 
-	wire _unused = &{awready, wready, bresp, bvalid}; //consume unused signal
+	wire _unused = &{awready, wready, bresp, bvalid, rid}; //consume unused signal
 
     always@(posedge clk)begin
        if(rst) ifu_state <= 0;

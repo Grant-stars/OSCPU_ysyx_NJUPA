@@ -6,10 +6,16 @@ module Xbar(
 	input [31:0] araddr,
 	input arvalid,
 	output arready,
+	input [3:0] arid,
+	input [7:0] arlen,
+	input [2:0] arsize,
+	input [1:0] arburst,
 	output [31:0] rdata,
 	output [1:0] rresp,
 	output rvalid,
 	input rready,
+	output rlast,
+	output reg [3:0] rid,
 	input [31:0] awaddr,
 	input awvalid,
 	output awready,
@@ -24,10 +30,16 @@ module Xbar(
    	output [31:0] araddr0,
 	output arvalid0,
 	input arready0,
+	output [3:0] arid0,
+	output [7:0] arlen0,
+	output [2:0] arsize0,
+	output [1:0] arburst0,
 	input [31:0] rdata0,
 	input [1:0] rresp0,
 	input rvalid0,
 	output rready0,
+	input rlast0,
+	input reg [3:0] rid0,
 	output [31:0] awaddr0,
 	output awvalid0,
 	input awready0,
@@ -42,10 +54,16 @@ module Xbar(
 	output [31:0] araddr1,
 	output arvalid1,
 	input arready1,
+	output [3:0] arid1,
+	output [7:0] arlen1,
+	output [2:0] arsize1,
+	output [1:0] arburst1,
 	input [31:0] rdata1,
 	input [1:0] rresp1,
 	input rvalid1,
 	output rready1,
+	input rlast1,
+	input reg [3:0] rid1,
 	output [31:0] awaddr1,
 	output awvalid1,
 	input awready1,
@@ -60,10 +78,16 @@ module Xbar(
 	output [31:0] araddr2,
 	output arvalid2,
 	input arready2,
+	output [3:0] arid2,
+	output [7:0] arlen2,
+	output [2:0] arsize2,
+	output [1:0] arburst2,
 	input [31:0] rdata2,
 	input [1:0] rresp2,
 	input rvalid2,
 	output rready2,
+	input rlast2,
+	input reg [3:0] rid2,
 	output [31:0] awaddr2,
 	output awvalid2,
 	input awready2,
@@ -96,6 +120,7 @@ module Xbar(
 		else w_slave_sel = ERROR;
 	end
 
+	reg [3:0] rid_reg;
 
 	always @(posedge clk)begin
 		if(rst)begin
@@ -104,6 +129,7 @@ module Xbar(
 		end
 		else begin
 			if(access)begin
+				rid_reg <= arid;
 				r_slave_sel_reg <= r_slave_sel;
 				w_slave_sel_reg <= w_slave_sel;
 
@@ -121,6 +147,26 @@ module Xbar(
 		(r_slave_sel_reg==UART) ? {arvalid, 2'b0} :
 		(r_slave_sel_reg==CLINT) ? {1'b0, arvalid, 1'b0} :
 		(r_slave_sel_reg==SRAM) ? {2'b0, arvalid} : {3'b0};
+	
+	assign {arid0, arid1, arid2} =
+		(r_slave_sel_reg==UART) ? {arid, 8'b0} :
+		(r_slave_sel_reg==CLINT) ? {4'b0, arid, 4'b0} :
+		(r_slave_sel_reg==SRAM) ? {8'b0, arid} : {12'b0};
+
+	assign {arlen0, arlen1, arlen2} =
+		(r_slave_sel_reg==UART) ? {arlen, 16'b0} :
+		(r_slave_sel_reg==CLINT) ? {8'b0, arlen, 8'b0} :
+		(r_slave_sel_reg==SRAM) ? {16'b0, arlen} : {24'b0};
+
+	assign {arsize0, arsize1, arsize2} =
+		(r_slave_sel_reg==UART) ? {arsize, 6'b0} :
+		(r_slave_sel_reg==CLINT) ? {3'b0, arsize, 3'b0} :
+		(r_slave_sel_reg==SRAM) ? {6'b0, arsize} : {9'b0};
+
+	assign {arburst0, arburst1, arburst2} =
+		(r_slave_sel_reg==UART) ? {arburst, 4'b0} :
+		(r_slave_sel_reg==CLINT) ? {2'b0, arburst, 2'b0} :
+		(r_slave_sel_reg==SRAM) ? {4'b0, arburst} : {6'b0};
 
 	assign {rready0, rready1, rready2} =
 		(r_slave_sel_reg==UART) ? {rready, 2'b0} :
@@ -143,6 +189,15 @@ module Xbar(
 	assign rvalid = (r_slave_sel_reg==UART) ? rvalid0 :
 		(r_slave_sel_reg==CLINT) ? rvalid1 :
 		(r_slave_sel_reg==SRAM) ? rvalid2 : 1;
+
+	assign rlast = (r_slave_sel_reg==UART) ? rlast0 :
+		(r_slave_sel_reg==CLINT) ? rlast1 :
+		(r_slave_sel_reg==SRAM) ? rlast2 : 1;
+
+	assign rid = (r_slave_sel_reg==UART) ? rid0 :
+		(r_slave_sel_reg==CLINT) ? rid1 :
+		(r_slave_sel_reg==SRAM) ? rid2 : rid_reg;
+
 
 
 	//W

@@ -10,17 +10,23 @@ module load_store(
 	input wbu_ready,
 	output lsu_ready,
 
-	//AXI4-Lite
+	//AXI4
 	//AR
 	output [31:0] araddr,
 	output arvalid,
 	input arready,
+	output [3:0] arid,
+	output [7:0] arlen,
+	output reg [2:0] arsize,
+	output [1:0] arburst,
 
 	//R
 	input [31:0] rdata,
 	input [1:0] rresp,
 	input rvalid,
 	output reg rready,
+	input rlast,
+	input [3:0] rid,
 
 	//AW
 	output [31:0] awaddr,
@@ -61,7 +67,7 @@ module load_store(
 			end
 
 			WAIT_AR_READY: lsu_next_state = arready ? WAIT_R : WAIT_AR_READY;
-			WAIT_R: lsu_next_state = (rvalid && rready && !(|rresp)) ? (wbu_ready ? IDLE : WAIT_HANDLE) : WAIT_R;
+			WAIT_R: lsu_next_state = (rvalid && rready && rlast && !(|rresp)) ? (wbu_ready ? IDLE : WAIT_HANDLE) : WAIT_R;
 
 			WAIT_AW_READY: lsu_next_state = awready ? WAIT_W : WAIT_AW_READY;
 			WAIT_W: lsu_next_state = (wvalid && wready) ? WAIT_B : WAIT_W;
@@ -82,13 +88,19 @@ module load_store(
 
 	assign bready = lsu_state==WAIT_B;
 
+	assign arid = 4'b0001;
+	assign arlen = 0;
+	assign arburst = 2'b01;
+
+	wire _unused = &rid;
+	
 	always @(*)begin
 		if(bvalid && bready) sig_assert(~(|bresp), "bresp");
 		if(rvalid && rready) sig_assert(~(|rresp), "rresp");
 	end
 
 	assign lsu_ready = lsu_next_state == IDLE;
-	assign mem_data_ready = ((lsu_state==WAIT_R) && rvalid && rready && !(|rresp)) ||
+	assign mem_data_ready = ((lsu_state==WAIT_R) && rvalid && rready && rlast && !(|rresp)) ||
 		((lsu_state==WAIT_B) && bvalid && bready) || (lsu_state==WAIT_HANDLE);
 	assign lsu_to_wbu_valid = exu_valid && ((lsu_state==IDLE && !valid) || mem_data_ready);
 
@@ -110,7 +122,7 @@ module load_store(
 		rdata_from_mem_reg <= rdata_from_mem;
 	end
 
-	assign rdata_from_mem= (lsu_state==WAIT_R && rvalid && rready && !(|rresp)) ? rdata : rdata_from_mem_reg;
+	assign rdata_from_mem= (lsu_state==WAIT_R && rvalid && rready && rlast && !(|rresp)) ? rdata : rdata_from_mem_reg;
 
 	always@(posedge clk)begin
 		if(rst) lsu_state <= 0;
@@ -125,6 +137,7 @@ module load_store(
         valid = 0;
         wen = 0;
         wstrb = 0;
+		arsize = 3'b10;
 
         case(ls_type)
 			LS_LB:begin
@@ -135,6 +148,7 @@ module load_store(
                     2'b11: rdata_to_wbu = {{24{rdata_from_mem[31]}},rdata_from_mem[31:24]};
                 endcase
                 valid = 1;
+				arsize = 3'b00;
 			end
 
 			LS_LH:begin
@@ -144,10 +158,12 @@ module load_store(
 					default:rdata_to_wbu = 0;
 				endcase
 				valid = 1;
+				arsize = 3'b01;
 			end
 
             LS_LW:begin
                 rdata_to_wbu= rdata_from_mem;
+				arsize = 3'b10;
                 valid = 1;
             end
 
@@ -159,6 +175,7 @@ module load_store(
                     2'b11: rdata_to_wbu = {24'b0,rdata_from_mem[31:24]};
                 endcase
                 valid = 1;
+				arsize = 3'b00;
             end
 
 			LS_LHU:begin
@@ -168,6 +185,7 @@ module load_store(
 					default:rdata_to_wbu = 0;
 				endcase
 				valid = 1;
+				arsize = 3'b01;
 
 			end
 

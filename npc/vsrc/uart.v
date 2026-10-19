@@ -5,12 +5,18 @@ module uart(
 	input [31:0] araddr,
 	input arvalid,
 	output arready,
+	input [3:0] arid,
+	input [7:0] arlen,
+	input [2:0] arsize,
+	input [1:0] arburst,
 
 	//R
 	output reg [31:0] rdata,
 	output [1:0] rresp,
 	output rvalid,
 	input rready,
+	output rlast,
+	output reg [3:0] rid,
 
 	//AW
 	input [31:0] awaddr,
@@ -49,6 +55,7 @@ module uart(
 	assign arready = state==AR_IDLE;
 	assign rresp = 0;
 	assign rvalid = state==WAIT_RREADY;
+	assign rlast = state==WAIT_RREADY;
 
     always@ (posedge clk)begin
        if(rst) state <= 0;
@@ -58,10 +65,11 @@ module uart(
 	always@ (posedge clk)begin
 		if(state==AR_IDLE && next_state==READ)begin
 			araddr_reg <= araddr;
+			rid <= arid;
 		end
 	end
 
-	wire _unused = &araddr_reg;
+	wire _unused = &{araddr_reg, arlen, arsize, arburst};
 
 	//read:
 	always @(posedge clk)begin

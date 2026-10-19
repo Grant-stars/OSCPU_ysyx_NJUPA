@@ -5,10 +5,16 @@ module memory_access(
    	input [31:0] araddr0,
 	input arvalid0,
 	output arready0,
+	input [3:0] arid0,
+	input [7:0] arlen0,
+	input [2:0] arsize0,
+	input [1:0] arburst0,
 	output [31:0] rdata0,
 	output [1:0] rresp0,
 	output rvalid0,
 	input rready0,
+	output rlast0,
+	output [3:0] rid0,
 	input [31:0] awaddr0,
 	input awvalid0,
 	output awready0,
@@ -23,10 +29,16 @@ module memory_access(
 	input [31:0] araddr1,
 	input arvalid1,
 	output arready1,
+	input [3:0] arid1,
+	input [7:0] arlen1,
+	input [2:0] arsize1,
+	input [1:0] arburst1,
 	output [31:0] rdata1,
 	output [1:0] rresp1,
 	output rvalid1,
 	input rready1,
+	output rlast1,
+	output [3:0] rid1,
 	input [31:0] awaddr1,
 	input awvalid1,
 	output awready1,
@@ -41,10 +53,16 @@ module memory_access(
 	output [31:0] araddr,
 	output arvalid,
 	input arready,
+	output [3:0] arid,
+	output [7:0] arlen,
+	output [2:0] arsize,
+	output [1:0] arburst,
 	input [31:0] rdata,
 	input [1:0] rresp,
 	input rvalid,
 	output rready,
+	input rlast,
+	input [3:0] rid,
 	output [31:0] awaddr,
 	output awvalid,
 	input awready,
@@ -95,6 +113,10 @@ module memory_access(
 	end
 
 	assign araddr = idle ? ((access1 && !access0) ? araddr1 : araddr0) : (grant ? araddr1 : araddr0);
+	assign arid= idle ? 0 : (grant ? arid1: arid0);
+	assign arlen= idle ? 0 : (grant ? arlen1: arlen0);
+	assign arsize = idle ? 0 : (grant ? arsize1: arsize0);
+	assign arburst = idle ? 0 : (grant ? arburst1: arburst0);
 	assign arvalid = idle ? 0 : (grant ? arvalid1: arvalid0);
 	assign rready = idle ? 0 : (grant ? rready1: rready0);
 	assign awaddr = idle ? ((access1 && !access0) ? awaddr1 : awaddr0) : (grant ? awaddr1: awaddr0);
@@ -108,6 +130,8 @@ module memory_access(
 	assign {rdata0, rdata1} = idle ? 0 : (grant ? {32'b0 , rdata} : {rdata, 32'b0});
 	assign {rresp0, rresp1} = idle ? 0 : (grant ? {2'b0 , rresp} : {rresp, 2'b0});
 	assign {rvalid0, rvalid1} = idle ? 0 : (grant ? {1'b0 , rvalid} : {rvalid, 1'b0});
+	assign {rlast0, rlast1} = idle ? 0 : (grant ? {1'b0 , rlast} : {rlast, 1'b0});
+	assign {rid0, rid1} = idle ? 0 : (grant ? {4'b0 , rid} : {rid, 4'b0});
 	assign {awready0, awready1} = idle ? 0 : (grant ? {1'b0 , awready} : {awready, 1'b0});
 	assign {wready0, wready1} = idle ? 0 : (grant ? {1'b0 , wready} : {wready, 1'b0});
 	assign {bresp0, bresp1} = idle ? 0 : (grant ? {2'b0 , bresp} : {bresp, 2'b0});

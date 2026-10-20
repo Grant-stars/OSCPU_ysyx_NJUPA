@@ -87,15 +87,21 @@ module top(
 	//AW
 	wire [31:0] ifu_awaddr;
 	wire ifu_awvalid, ifu_awready;
+	wire [3:0] ifu_awid;
+	wire [7:0] ifu_awlen;
+	wire [2:0] ifu_awsize;
+	wire [1:0] ifu_awburst;
 
 	//W
 	wire [31:0] ifu_wdata;
 	wire [3:0] ifu_wstrb;
 	wire ifu_wvalid, ifu_wready;
+	wire ifu_wlast;
 
 	//B
 	wire [1:0] ifu_bresp;
 	wire ifu_bvalid, ifu_bready;
+	wire [3:0] ifu_bid;
 
   //lsu
 	//R
@@ -115,15 +121,21 @@ module top(
 	//AW
 	wire [31:0] lsu_awaddr;
 	wire lsu_awvalid, lsu_awready;
+	wire [3:0] lsu_awid;
+	wire [7:0] lsu_awlen;
+	wire [2:0] lsu_awsize;
+	wire [1:0] lsu_awburst;
 
 	//W
 	wire [31:0] lsu_wdata;
 	wire [3:0] lsu_wstrb;
 	wire lsu_wvalid, lsu_wready;
+	wire lsu_wlast;
 
 	//B
 	wire [1:0] lsu_bresp;
 	wire lsu_bvalid, lsu_bready;
+	wire [3:0] lsu_bid;
 
 
 	wire Bus_access;
@@ -147,13 +159,19 @@ module top(
 	.awaddr0(ifu_awaddr),
 	.awvalid0(ifu_awvalid),
 	.awready0(ifu_awready),
+	.awid0(ifu_awid),
+	.awlen0(ifu_awlen),
+	.awsize0(ifu_awsize),
+	.awburst0(ifu_awburst),
 	.wdata0(ifu_wdata),
 	.wstrb0(ifu_wstrb),
 	.wvalid0(ifu_wvalid),
 	.wready0(ifu_wready),
+	.wlast0(ifu_wlast),
 	.bresp0(ifu_bresp),
 	.bvalid0(ifu_bvalid),
 	.bready0(ifu_bready),
+	.bid0(ifu_bid),
 	
 	.araddr1(lsu_araddr),
 	.arvalid1(lsu_arvalid),
@@ -171,13 +189,19 @@ module top(
 	.awaddr1(lsu_awaddr),
 	.awvalid1(lsu_awvalid),
 	.awready1(lsu_awready),
+	.awid1(lsu_awid),
+	.awlen1(lsu_awlen),
+	.awsize1(lsu_awsize),
+	.awburst1(lsu_awburst),
 	.wdata1(lsu_wdata),
 	.wstrb1(lsu_wstrb),
 	.wvalid1(lsu_wvalid),
 	.wready1(lsu_wready),
+	.wlast1(lsu_wlast),
 	.bresp1(lsu_bresp),
 	.bvalid1(lsu_bvalid),
 	.bready1(lsu_bready),
+	.bid1(lsu_bid),
 
 	.araddr(Xbar_araddr),
 	.arvalid(Xbar_arvalid),
@@ -195,13 +219,19 @@ module top(
 	.awaddr(Xbar_awaddr),
 	.awvalid(Xbar_awvalid),
 	.awready(Xbar_awready),
+	.awid(Xbar_awid),
+	.awlen(Xbar_awlen),
+	.awsize(Xbar_awsize),
+	.awburst(Xbar_awburst),
 	.wdata(Xbar_wdata),
 	.wstrb(Xbar_wstrb),
 	.wvalid(Xbar_wvalid),
 	.wready(Xbar_wready),
+	.wlast(Xbar_wlast),
 	.bresp(Xbar_bresp),
 	.bvalid(Xbar_bvalid),
 	.bready(Xbar_bready),
+	.bid(Xbar_bid),
 
 	.access(Bus_access)
 
@@ -225,13 +255,19 @@ module top(
   wire [31:0] Xbar_awaddr;
   wire Xbar_awvalid;
   wire Xbar_awready;
+  wire [3:0] Xbar_awid;
+  wire [7:0] Xbar_awlen;
+  wire [2:0] Xbar_awsize;
+  wire [1:0] Xbar_awburst;
   wire [31:0] Xbar_wdata;
   wire [3:0] Xbar_wstrb;
   wire Xbar_wvalid;
   wire Xbar_wready;
+  wire Xbar_wlast;
   wire [1:0] Xbar_bresp;
   wire Xbar_bvalid;
   wire Xbar_bready;
+  wire [3:0] Xbar_bid;
 	
   Xbar Xbar(
 	.clk(clk),
@@ -254,13 +290,19 @@ module top(
 	.awaddr(Xbar_awaddr),
 	.awvalid(Xbar_awvalid),
 	.awready(Xbar_awready),
+	.awid(Xbar_awid),
+	.awlen(Xbar_awlen),
+	.awsize(Xbar_awsize),
+	.awburst(Xbar_awburst),
 	.wdata(Xbar_wdata),
 	.wstrb(Xbar_wstrb),
 	.wvalid(Xbar_wvalid),
 	.wready(Xbar_wready),
+	.wlast(Xbar_wlast),
 	.bresp(Xbar_bresp),
 	.bvalid(Xbar_bvalid),
 	.bready(Xbar_bready),
+	.bid(Xbar_bid),
 
 	.araddr0(uart_araddr),
 	.arvalid0(uart_arvalid),
@@ -278,13 +320,19 @@ module top(
 	.awaddr0(uart_awaddr),
 	.awvalid0(uart_awvalid),
 	.awready0(uart_awready),
+	.awid0(uart_awid),
+	.awlen0(uart_awlen),
+	.awsize0(uart_awsize),
+	.awburst0(uart_awburst),
 	.wdata0(uart_wdata),
 	.wstrb0(uart_wstrb),
 	.wvalid0(uart_wvalid),
 	.wready0(uart_wready),
+	.wlast0(uart_wlast),
 	.bresp0(uart_bresp),
 	.bvalid0(uart_bvalid),
 	.bready0(uart_bready),
+	.bid0(uart_bid),
 	
 	.araddr1(clint_araddr),
 	.arvalid1(clint_arvalid),
@@ -302,14 +350,20 @@ module top(
 	.awaddr1(clint_awaddr),
 	.awvalid1(clint_awvalid),
 	.awready1(clint_awready),
+	.awid1(clint_awid),
+	.awlen1(clint_awlen),
+	.awsize1(clint_awsize),
+	.awburst1(clint_awburst),
 	.wdata1(clint_wdata),
 	.wstrb1(clint_wstrb),
 	.wvalid1(clint_wvalid),
 	.wready1(clint_wready),
+	.wlast1(clint_wlast),
 	.bresp1(clint_bresp),
 	.bvalid1(clint_bvalid),
 	.bready1(clint_bready),
-
+	.bid1(clint_bid),
+	
 	.araddr2(m_araddr),
 	.arvalid2(m_arvalid),
 	.arready2(m_arready),
@@ -326,13 +380,19 @@ module top(
 	.awaddr2(m_awaddr),
 	.awvalid2(m_awvalid),
 	.awready2(m_awready),
+	.awid2(m_awid),
+	.awlen2(m_awlen),
+	.awsize2(m_awsize),
+	.awburst2(m_awburst),
 	.wdata2(m_wdata),
 	.wstrb2(m_wstrb),
 	.wvalid2(m_wvalid),
 	.wready2(m_wready),
+	.wlast2(m_wlast),
 	.bresp2(m_bresp),
 	.bvalid2(m_bvalid),
-	.bready2(m_bready)
+	.bready2(m_bready),
+	.bid2(m_bid)
   );
 
 
@@ -353,13 +413,19 @@ module top(
   wire [31:0] uart_awaddr;
   wire uart_awvalid;
   wire uart_awready;
+  wire [3:0] uart_awid;
+  wire [7:0] uart_awlen;
+  wire [2:0] uart_awsize;
+  wire [1:0] uart_awburst;
   wire [31:0] uart_wdata;
   wire [3:0] uart_wstrb;
   wire uart_wvalid;
   wire uart_wready;
+  wire uart_wlast;
   wire [1:0] uart_bresp;
   wire uart_bvalid;
   wire uart_bready;
+  wire [3:0] uart_bid;
 	
   uart UART(
 	 .clk(clk),
@@ -380,13 +446,19 @@ module top(
 	 .awaddr(uart_awaddr),
 	 .awvalid(uart_awvalid),
 	 .awready(uart_awready),
+	 .awid(uart_awid),
+	 .awlen(uart_awlen),
+	 .awsize(uart_awsize),
+	 .awburst(uart_awburst),
 	 .wdata(uart_wdata),
 	 .wstrb(uart_wstrb),
 	 .wvalid(uart_wvalid),
 	 .wready(uart_wready),
+	 .wlast(uart_wlast),
 	 .bresp(uart_bresp),
 	 .bvalid(uart_bvalid),
-	 .bready(uart_bready)
+	 .bready(uart_bready),
+	 .bid(uart_bid)
   );
 
 
@@ -407,13 +479,19 @@ module top(
   wire [31:0] clint_awaddr;
   wire clint_awvalid;
   wire clint_awready;
+  wire [3:0] clint_awid;
+  wire [7:0] clint_awlen;
+  wire [2:0] clint_awsize;
+  wire [1:0] clint_awburst;
   wire [31:0] clint_wdata;
   wire [3:0] clint_wstrb;
   wire clint_wvalid;
   wire clint_wready;
+  wire clint_wlast;
   wire [1:0] clint_bresp;
   wire clint_bvalid;
   wire clint_bready;
+  wire [3:0] clint_bid;
 	
   CLINT CLINT(
 	 .clk(clk),
@@ -434,13 +512,19 @@ module top(
 	 .awaddr(clint_awaddr),
 	 .awvalid(clint_awvalid),
 	 .awready(clint_awready),
+	 .awid(clint_awid),
+	 .awlen(clint_awlen),
+	 .awsize(clint_awsize),
+	 .awburst(clint_awburst),
 	 .wdata(clint_wdata),
 	 .wstrb(clint_wstrb),
 	 .wvalid(clint_wvalid),
 	 .wready(clint_wready),
+	 .wlast(clint_wlast),
 	 .bresp(clint_bresp),
 	 .bvalid(clint_bvalid),
-	 .bready(clint_bready)
+	 .bready(clint_bready),
+	 .bid(clint_bid)
   );
 
 
@@ -461,13 +545,19 @@ module top(
   wire [31:0] m_awaddr;
   wire m_awvalid;
   wire m_awready;
+  wire [3:0] m_awid;
+  wire [7:0] m_awlen;
+  wire [2:0] m_awsize;
+  wire [1:0] m_awburst;
   wire [31:0] m_wdata;
   wire [3:0] m_wstrb;
   wire m_wvalid;
   wire m_wready;
+  wire m_wlast;
   wire [1:0] m_bresp;
   wire m_bvalid;
   wire m_bready;
+  wire [3:0] m_bid;
 	
   memory MEM(
 	 .clk(clk),
@@ -488,13 +578,19 @@ module top(
 	 .awaddr(m_awaddr),
 	 .awvalid(m_awvalid),
 	 .awready(m_awready),
+	 .awid(m_awid),
+	 .awlen(m_awlen),
+	 .awsize(m_awsize),
+	 .awburst(m_awburst),
 	 .wdata(m_wdata),
 	 .wstrb(m_wstrb),
 	 .wvalid(m_wvalid),
 	 .wready(m_wready),
+	 .wlast(m_wlast),
 	 .bresp(m_bresp),
 	 .bvalid(m_bvalid),
-	 .bready(m_bready)
+	 .bready(m_bready),
+	 .bid(m_bid)
   );
 
 
@@ -532,13 +628,19 @@ module top(
 	.awaddr(ifu_awaddr),
 	.awvalid(ifu_awvalid),
 	.awready(ifu_awready),
+	.awid(ifu_awid),
+	.awlen(ifu_awlen),
+	.awsize(ifu_awsize),
+	.awburst(ifu_awburst),
 	.wdata(ifu_wdata),
 	.wstrb(ifu_wstrb),
 	.wvalid(ifu_wvalid),
 	.wready(ifu_wready),
+	.wlast(ifu_wlast),
 	.bresp(ifu_bresp),
 	.bvalid(ifu_bvalid),
-	.bready(ifu_bready)
+	.bready(ifu_bready),
+	.bid(ifu_bid)
   );
 
 
@@ -640,13 +742,19 @@ module top(
 	.awaddr(lsu_awaddr),
 	.awvalid(lsu_awvalid),
 	.awready(lsu_awready),
+	.awid(lsu_awid),
+	.awlen(lsu_awlen),
+	.awsize(lsu_awsize),
+	.awburst(lsu_awburst),
 	.wdata(lsu_wdata),
 	.wstrb(lsu_wstrb),
 	.wvalid(lsu_wvalid),
 	.wready(lsu_wready),
+	.wlast(lsu_wlast),
 	.bresp(lsu_bresp),
 	.bvalid(lsu_bvalid),
-	.bready(lsu_bready)
+	.bready(lsu_bready),
+	.bid(lsu_bid)
   );
 
 

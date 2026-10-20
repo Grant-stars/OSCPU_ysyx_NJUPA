@@ -18,13 +18,19 @@ module memory_access(
 	input [31:0] awaddr0,
 	input awvalid0,
 	output awready0,
+	input [3:0] awid0,
+	input [7:0] awlen0,
+	input [2:0] awsize0,
+	input [1:0] awburst0,
 	input [31:0] wdata0,
 	input [3:0] wstrb0,
 	input wvalid0,
 	output wready0,
+	input wlast0,
 	output [1:0] bresp0,
 	output bvalid0,
 	input bready0,
+	output [3:0] bid0,
 	
 	input [31:0] araddr1,
 	input arvalid1,
@@ -42,13 +48,19 @@ module memory_access(
 	input [31:0] awaddr1,
 	input awvalid1,
 	output awready1,
+	input [3:0] awid1,
+	input [7:0] awlen1,
+	input [2:0] awsize1,
+	input [1:0] awburst1,
 	input [31:0] wdata1,
 	input [3:0] wstrb1,
 	input wvalid1,
 	output wready1,
+	input wlast1,
 	output [1:0] bresp1,
 	output bvalid1,
 	input bready1,
+	output [3:0] bid1,
 
 	output [31:0] araddr,
 	output arvalid,
@@ -66,13 +78,19 @@ module memory_access(
 	output [31:0] awaddr,
 	output awvalid,
 	input awready,
+	output [3:0] awid,
+	output [7:0] awlen,
+	output [2:0] awsize,
+	output [1:0] awburst,
 	output [31:0] wdata,
 	output [3:0] wstrb,
 	output wvalid,
 	input wready,
+	output wlast,
 	input [1:0] bresp,
 	input bvalid,
 	output bready,
+	input [3:0] bid,
 
 	output access
 	);
@@ -121,9 +139,14 @@ module memory_access(
 	assign rready = idle ? 0 : (grant ? rready1: rready0);
 	assign awaddr = idle ? ((access1 && !access0) ? awaddr1 : awaddr0) : (grant ? awaddr1: awaddr0);
 	assign awvalid = idle ? 0 : (grant ? awvalid1: awvalid0);
+	assign awid= idle ? 0 : (grant ? awid1: awid0);
+	assign awlen= idle ? 0 : (grant ? awlen1: awlen0);
+	assign awsize = idle ? 0 : (grant ? awsize1: awsize0);
+	assign awburst = idle ? 0 : (grant ? awburst1: awburst0);
 	assign wdata = idle ? 0 : (grant ? wdata1: wdata0);
 	assign wstrb = idle ? 0 : (grant ? wstrb1: wstrb0);
 	assign wvalid = idle ? 0 : (grant ? wvalid1: wvalid0);
+	assign wlast = idle ? 0 : (grant ? wlast1: wlast0);
 	assign bready = idle ? 0 : (grant ? bready1: bready0);
 
 	assign {arready0, arready1} = idle ? 0 : (grant ? {1'b0, arready} : {arready, 1'b0});
@@ -136,6 +159,7 @@ module memory_access(
 	assign {wready0, wready1} = idle ? 0 : (grant ? {1'b0 , wready} : {wready, 1'b0});
 	assign {bresp0, bresp1} = idle ? 0 : (grant ? {2'b0 , bresp} : {bresp, 2'b0});
 	assign {bvalid0, bvalid1} = idle ? 0 : (grant ? {1'b0 , bvalid} : {bvalid, 1'b0});
+	assign {bid0, bid1} = idle ? 0 : (grant ? {4'b0 , bid} : {bid, 4'b0});
 
 endmodule
 

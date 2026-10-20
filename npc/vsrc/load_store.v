@@ -32,17 +32,23 @@ module load_store(
 	output [31:0] awaddr,
 	output awvalid,
 	input awready,
+	output [3:0] awid,
+	output [7:0] awlen,
+	output reg [2:0] awsize,
+	output [1:0] awburst,
 
 	//W
 	output reg [31:0] wdata,
 	output [3:0] wstrb,
 	output wvalid,
 	input wready,
+	output wlast,
 
 	//B
 	input [1:0] bresp,
 	input bvalid,
-	output bready
+	output bready,
+	input [3:0] bid
 );
     parameter [4:0] LS_LB = 1, LS_LH = 2 ,LS_LW = 3, LS_LBU = 4, LS_LHU = 5, LS_SB = 6, LS_SH = 7, LS_SW=8;
 	parameter [2:0] IDLE = 0, WAIT_AR_READY = 1, WAIT_R = 2, WAIT_AW_READY = 3, WAIT_W = 4, WAIT_B = 5, WAIT_HANDLE = 6;
@@ -85,6 +91,7 @@ module load_store(
 	assign awvalid = ((lsu_state==IDLE || lsu_state==WAIT_AW_READY) && exu_valid && valid && wen);
 
 	assign wvalid = lsu_state==WAIT_W;
+	assign wlast= lsu_state==WAIT_W;
 
 	assign bready = lsu_state==WAIT_B;
 
@@ -92,7 +99,11 @@ module load_store(
 	assign arlen = 0;
 	assign arburst = 2'b01;
 
-	wire _unused = &rid;
+	assign awid = 4'b0001;
+	assign awlen = 0;
+	assign awburst = 2'b01;
+
+	wire _unused = &{rid, bid};
 	
 	always @(*)begin
 		if(bvalid && bready) sig_assert(~(|bresp), "bresp");
@@ -138,6 +149,7 @@ module load_store(
         wen = 0;
         wstrb = 0;
 		arsize = 3'b10;
+		awsize = 3'b10;
 
         case(ls_type)
 			LS_LB:begin
@@ -202,6 +214,7 @@ module load_store(
                     2'b10: wstrb = 4'b0100;
                     2'b11: wstrb = 4'b1000;
                 endcase
+				awsize = 3'b00;
             end
 			
 			LS_SH:begin
@@ -213,13 +226,14 @@ module load_store(
                     2'b10: wstrb = 4'b1100;
 					default: wstrb = 0;
                 endcase
-
+				awsize = 3'b01;
 			end
 
             LS_SW:begin
                 valid = 1;
                 wen = 1;
                 wstrb = 4'b1111;
+				awsize = 3'b10;
             end
 
             default:begin

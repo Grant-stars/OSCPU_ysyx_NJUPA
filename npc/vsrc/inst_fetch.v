@@ -31,17 +31,23 @@ module inst_fetch(
 	output [31:0] awaddr,
 	output awvalid,
 	input awready,
+	output [3:0] awid,
+	output [7:0] awlen,
+	output [2:0] awsize,
+	output [1:0] awburst,
 
 	//W
 	output [31:0] wdata,
 	output [3:0] wstrb,
 	output wvalid,
 	input wready,
+	output wlast,
 
 	//B
 	input [1:0] bresp,
 	input bvalid,
-	output bready
+	output bready,
+	input [3:0] bid
 );
     parameter [1:0] JUMP_NOP = 0, JUMP_JALR = 1, JUMP_JAL =2, JUMP_CB = 3;
 	parameter IDLE = 0, WAIT_AR_READY = 1, WAIT_R = 2, WAIT_HANDLE = 3;
@@ -113,12 +119,17 @@ module inst_fetch(
 
 	assign awaddr = 0;
 	assign awvalid = 0;
+	assign awid = 0;
+	assign awlen = 0;
+	assign awsize = 0;
+	assign awburst = 0;
 	assign wdata = 0;
 	assign wstrb = 0;
 	assign wvalid = 0;
+	assign wlast = 0;
 	assign bready = 0;
 
-	wire _unused = &{awready, wready, bresp, bvalid, rid}; //consume unused signal
+	wire _unused = &{awready, wready, bresp, bvalid, rid, bid}; //consume unused signal
 
     always@(posedge clk)begin
        if(rst) ifu_state <= 0;

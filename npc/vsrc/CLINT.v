@@ -22,17 +22,23 @@ module CLINT(
 	input [31:0] awaddr,
 	input awvalid,
 	output awready,
+	input [3:0] awid,
+	input [7:0] awlen,
+	input [2:0] awsize,
+	input [1:0] awburst,
 
 	//W
 	input [31:0] wdata,
 	input [3:0] wstrb,
 	input wvalid,
 	output wready,
+	input wlast,
 
 	//B
 	output [1:0] bresp,
 	output bvalid,
-	input bready
+	input bready,
+	output reg [3:0] bid
 );
 
 
@@ -92,7 +98,7 @@ parameter [1:0] SLVERR = 2'b10;
 	always @(*)begin
 		case(w_state)
 			AW_IDLE: w_next_state = awvalid ? WAIT_W : AW_IDLE;
-			WAIT_W: w_next_state = wvalid ? W : WAIT_W;
+			WAIT_W: w_next_state = (wvalid && wlast) ? W : WAIT_W;
 			W: w_next_state = B;
 			B: w_next_state = bready ? AW_IDLE : B;
 		endcase
@@ -111,6 +117,7 @@ parameter [1:0] SLVERR = 2'b10;
 	always@ (posedge clk)begin
 		if(w_state==AW_IDLE && w_next_state==WAIT_W)begin
 			awaddr_reg <= awaddr;
+			bid <= awid;
 		end
 		if(w_state==WAIT_W && w_next_state==W)begin
 			wdata_reg <= wdata;
@@ -118,7 +125,7 @@ parameter [1:0] SLVERR = 2'b10;
 		end
 	end
 
-	wire _unused = &{arlen, arsize, arburst, awaddr_reg, wdata_reg, wstrb_reg};
+	wire _unused = &{arlen, arsize, arburst, awaddr_reg, awlen, awsize, awburst,  wdata_reg, wstrb_reg};
 
 	always@ (posedge clk)begin
 		if(w_state==W && w_next_state==B)begin

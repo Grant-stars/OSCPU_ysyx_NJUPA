@@ -19,13 +19,19 @@ module Xbar(
 	input [31:0] awaddr,
 	input awvalid,
 	output awready,
+	input [3:0] awid,
+	input [7:0] awlen,
+	input [2:0] awsize,
+	input [1:0] awburst,
 	input [31:0] wdata,
 	input [3:0] wstrb,
 	input wvalid,
 	output wready,
+	input wlast,
 	output [1:0] bresp,
 	output bvalid,
 	input bready,
+	output reg [3:0] bid,
 
    	output [31:0] araddr0,
 	output arvalid0,
@@ -39,17 +45,23 @@ module Xbar(
 	input rvalid0,
 	output rready0,
 	input rlast0,
-	input reg [3:0] rid0,
+	input [3:0] rid0,
 	output [31:0] awaddr0,
 	output awvalid0,
 	input awready0,
+	output [3:0] awid0,
+	output [7:0] awlen0,
+	output [2:0] awsize0,
+	output [1:0] awburst0,
 	output [31:0] wdata0,
 	output [3:0] wstrb0,
 	output wvalid0,
 	input wready0,
+	output wlast0,
 	input [1:0] bresp0,
 	input bvalid0,
 	output bready0,
+	input [3:0] bid0,
 
 	output [31:0] araddr1,
 	output arvalid1,
@@ -63,17 +75,23 @@ module Xbar(
 	input rvalid1,
 	output rready1,
 	input rlast1,
-	input reg [3:0] rid1,
+	input [3:0] rid1,
 	output [31:0] awaddr1,
 	output awvalid1,
 	input awready1,
+	output [3:0] awid1,
+	output [7:0] awlen1,
+	output [2:0] awsize1,
+	output [1:0] awburst1,
 	output [31:0] wdata1,
 	output [3:0] wstrb1,
 	output wvalid1,
 	input wready1,
+	output wlast1,
 	input [1:0] bresp1,
 	input bvalid1,
 	output bready1,
+	input [3:0] bid1,
 	
 	output [31:0] araddr2,
 	output arvalid2,
@@ -87,17 +105,23 @@ module Xbar(
 	input rvalid2,
 	output rready2,
 	input rlast2,
-	input reg [3:0] rid2,
+	input [3:0] rid2,
 	output [31:0] awaddr2,
 	output awvalid2,
 	input awready2,
+	output [3:0] awid2,
+	output [7:0] awlen2,
+	output [2:0] awsize2,
+	output [1:0] awburst2,
 	output [31:0] wdata2,
 	output [3:0] wstrb2,
 	output wvalid2,
 	input wready2,
+	output wlast2,
 	input [1:0] bresp2,
 	input bvalid2,
-	output bready2
+	output bready2,
+	input [3:0] bid2
 );
 
 	parameter [1:0] ERROR = 0, UART = 1, CLINT = 2, SRAM = 3;
@@ -120,7 +144,7 @@ module Xbar(
 		else w_slave_sel = ERROR;
 	end
 
-	reg [3:0] rid_reg;
+	reg [3:0] rid_reg, bid_reg;
 
 	always @(posedge clk)begin
 		if(rst)begin
@@ -129,6 +153,7 @@ module Xbar(
 		end
 		else begin
 			if(access)begin
+				bid_reg <= awid;
 				rid_reg <= arid;
 				r_slave_sel_reg <= r_slave_sel;
 				w_slave_sel_reg <= w_slave_sel;
@@ -212,6 +237,27 @@ module Xbar(
 		(w_slave_sel_reg==CLINT) ? {1'b0, awvalid, 1'b0} :
 		(w_slave_sel_reg==SRAM) ? {2'b0, awvalid} : {3'b0};
 
+	assign {awid0, awid1, awid2} =
+		(r_slave_sel_reg==UART) ? {awid, 8'b0} :
+		(r_slave_sel_reg==CLINT) ? {4'b0, awid, 4'b0} :
+		(r_slave_sel_reg==SRAM) ? {8'b0, awid} : {12'b0};
+
+	assign {awlen0, awlen1, awlen2} =
+		(r_slave_sel_reg==UART) ? {awlen, 16'b0} :
+		(r_slave_sel_reg==CLINT) ? {8'b0, awlen, 8'b0} :
+		(r_slave_sel_reg==SRAM) ? {16'b0, awlen} : {24'b0};
+
+	assign {awsize0, awsize1, awsize2} =
+		(r_slave_sel_reg==UART) ? {awsize, 6'b0} :
+		(r_slave_sel_reg==CLINT) ? {3'b0, awsize, 3'b0} :
+		(r_slave_sel_reg==SRAM) ? {6'b0, awsize} : {9'b0};
+
+	assign {awburst0, awburst1, awburst2} =
+		(r_slave_sel_reg==UART) ? {awburst, 4'b0} :
+		(r_slave_sel_reg==CLINT) ? {2'b0, awburst, 2'b0} :
+		(r_slave_sel_reg==SRAM) ? {4'b0, awburst} : {6'b0};
+
+
 	assign {wdata0, wdata1, wdata2} =
 		(w_slave_sel_reg==UART) ? {wdata, 64'b0} :
 		(w_slave_sel_reg==CLINT) ? {32'b0, wdata, 32'b0} :
@@ -226,6 +272,11 @@ module Xbar(
 		(w_slave_sel_reg==UART) ? {wvalid, 2'b0} :
 		(w_slave_sel_reg==CLINT) ? {1'b0, wvalid, 1'b0} :
 		(w_slave_sel_reg==SRAM) ? {2'b0, wvalid} : {3'b0};
+
+	assign {wlast0, wlast1, wlast2} =
+		(w_slave_sel_reg==UART) ? {wlast, 2'b0} :
+		(w_slave_sel_reg==CLINT) ? {1'b0, wlast, 1'b0} :
+		(w_slave_sel_reg==SRAM) ? {2'b0, wlast} : {3'b0};
 
 	assign {bready0, bready1, bready2} =
 		(w_slave_sel_reg==UART) ? {bready, 2'b0} :
@@ -249,5 +300,8 @@ module Xbar(
 		(w_slave_sel_reg==CLINT) ? bvalid1 :
 		(w_slave_sel_reg==SRAM) ? bvalid2 : 1;
 
+	assign bid = (r_slave_sel_reg==UART) ? bid0 :
+		(r_slave_sel_reg==CLINT) ? bid1 :
+		(r_slave_sel_reg==SRAM) ? bid2 : bid_reg;
 
 endmodule

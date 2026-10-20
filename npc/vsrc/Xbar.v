@@ -91,60 +91,23 @@ module Xbar(
 	input [1:0] bresp1,
 	input bvalid1,
 	output bready1,
-	input [3:0] bid1,
-	
-	output [31:0] araddr2,
-	output arvalid2,
-	input arready2,
-	output [3:0] arid2,
-	output [7:0] arlen2,
-	output [2:0] arsize2,
-	output [1:0] arburst2,
-	input [31:0] rdata2,
-	input [1:0] rresp2,
-	input rvalid2,
-	output rready2,
-	input rlast2,
-	input [3:0] rid2,
-	output [31:0] awaddr2,
-	output awvalid2,
-	input awready2,
-	output [3:0] awid2,
-	output [7:0] awlen2,
-	output [2:0] awsize2,
-	output [1:0] awburst2,
-	output [31:0] wdata2,
-	output [3:0] wstrb2,
-	output wvalid2,
-	input wready2,
-	output wlast2,
-	input [1:0] bresp2,
-	input bvalid2,
-	output bready2,
-	input [3:0] bid2
+	input [3:0] bid1
 );
 
-	parameter [1:0] ERROR = 0, UART = 1, CLINT = 2, SRAM = 3;
-	parameter [1:0] DECERR = 2'b11;
+	parameter CLINT = 0, DOWNSTREAM = 1;
 
-	reg [1:0] r_slave_sel, r_slave_sel_reg;
-	reg [1:0] w_slave_sel, w_slave_sel_reg;
+	reg r_slave_sel, r_slave_sel_reg;
+	reg w_slave_sel, w_slave_sel_reg;
 
 	always @(*)begin
 		//R
-		if(araddr>=32'h10000000 && araddr<32'h10000fff)	r_slave_sel = UART;
-		else if (araddr>=32'h80000000 && araddr<32'h8fffffff)	r_slave_sel = SRAM;
-		else if (araddr>=32'h02000000 && araddr<32'h0200ffff)	r_slave_sel = CLINT;
-		else r_slave_sel = ERROR;
+		if (araddr>=32'h02000000 && araddr<32'h0200ffff)	r_slave_sel = CLINT;
+		else r_slave_sel = DOWNSTREAM;
 
 		//W
-		if(awaddr>=32'h10000000 && awaddr<32'h10000fff)	w_slave_sel = UART;
-		else if (awaddr>=32'h80000000 && awaddr<32'h8fffffff)	w_slave_sel = SRAM;
-		else if (awaddr>=32'h02000000 && awaddr<32'h0200ffff)	w_slave_sel = CLINT;
-		else w_slave_sel = ERROR;
+		if (awaddr>=32'h02000000 && awaddr<32'h0200ffff)	w_slave_sel = CLINT;
+		else w_slave_sel = DOWNSTREAM;
 	end
-
-	reg [3:0] rid_reg, bid_reg;
 
 	always @(posedge clk)begin
 		if(rst)begin
@@ -153,155 +116,49 @@ module Xbar(
 		end
 		else begin
 			if(access)begin
-				bid_reg <= awid;
-				rid_reg <= arid;
 				r_slave_sel_reg <= r_slave_sel;
 				w_slave_sel_reg <= w_slave_sel;
-
 			end
 		end
 	end
 
+
 	//R
-	assign {araddr0, araddr1, araddr2} =
-		(r_slave_sel_reg==UART) ? {araddr, 64'b0} :
-		(r_slave_sel_reg==CLINT) ? {32'b0, araddr, 32'b0} :
-		(r_slave_sel_reg==SRAM) ? {64'b0, araddr} : {96'b0};
+	assign {araddr0, araddr1} = (r_slave_sel_reg==CLINT) ? {araddr, 32'b0} : {32'b0, araddr};
+	assign {arvalid0, arvalid1} = (r_slave_sel_reg==CLINT) ? {arvalid, 1'b0} : {1'b0, arvalid};
+	assign {arid0, arid1} = (r_slave_sel_reg==CLINT) ? {arid, 4'b0} : {4'b0, arid};
+	assign {arlen0, arlen1} = (r_slave_sel_reg==CLINT) ? {arlen, 8'b0} : {8'b0, arlen};
+	assign {arsize0, arsize1} = (r_slave_sel_reg==CLINT) ? {arsize, 3'b0} : {3'b0, arsize};
+	assign {arburst0, arburst1} = (r_slave_sel_reg==CLINT) ? {arburst, 2'b0} : {2'b0, arburst};
+	assign {rready0, rready1} = (r_slave_sel_reg==CLINT) ? {rready, 1'b0} : {1'b0, rready};
 
-	assign {arvalid0, arvalid1, arvalid2} =
-		(r_slave_sel_reg==UART) ? {arvalid, 2'b0} :
-		(r_slave_sel_reg==CLINT) ? {1'b0, arvalid, 1'b0} :
-		(r_slave_sel_reg==SRAM) ? {2'b0, arvalid} : {3'b0};
+	assign arready = (r_slave_sel_reg==CLINT) ? arready0 : arready1;
+	assign rdata = (r_slave_sel_reg==CLINT) ? rdata0 : rdata1;
+	assign rresp = (r_slave_sel_reg==CLINT) ? rresp0 : rresp1;
+	assign rvalid = (r_slave_sel_reg==CLINT) ? rvalid0 : rvalid1;
+	assign rlast = (r_slave_sel_reg==CLINT) ? rlast0 : rlast1;
+	assign rid = (r_slave_sel_reg==CLINT) ? rid0 : rid1;
+
 	
-	assign {arid0, arid1, arid2} =
-		(r_slave_sel_reg==UART) ? {arid, 8'b0} :
-		(r_slave_sel_reg==CLINT) ? {4'b0, arid, 4'b0} :
-		(r_slave_sel_reg==SRAM) ? {8'b0, arid} : {12'b0};
-
-	assign {arlen0, arlen1, arlen2} =
-		(r_slave_sel_reg==UART) ? {arlen, 16'b0} :
-		(r_slave_sel_reg==CLINT) ? {8'b0, arlen, 8'b0} :
-		(r_slave_sel_reg==SRAM) ? {16'b0, arlen} : {24'b0};
-
-	assign {arsize0, arsize1, arsize2} =
-		(r_slave_sel_reg==UART) ? {arsize, 6'b0} :
-		(r_slave_sel_reg==CLINT) ? {3'b0, arsize, 3'b0} :
-		(r_slave_sel_reg==SRAM) ? {6'b0, arsize} : {9'b0};
-
-	assign {arburst0, arburst1, arburst2} =
-		(r_slave_sel_reg==UART) ? {arburst, 4'b0} :
-		(r_slave_sel_reg==CLINT) ? {2'b0, arburst, 2'b0} :
-		(r_slave_sel_reg==SRAM) ? {4'b0, arburst} : {6'b0};
-
-	assign {rready0, rready1, rready2} =
-		(r_slave_sel_reg==UART) ? {rready, 2'b0} :
-		(r_slave_sel_reg==CLINT) ? {1'b0, rready, 1'b0} :
-		(r_slave_sel_reg==SRAM) ? {2'b0, rready} : {3'b0};
-
-
-	assign arready = (r_slave_sel_reg==UART) ? arready0 :
-		(r_slave_sel_reg==CLINT) ? arready1 :
-		(r_slave_sel_reg==SRAM) ? arready2 : 1;
-
-	assign rdata = (r_slave_sel_reg==UART) ? rdata0 :
-		(r_slave_sel_reg==CLINT) ? rdata1 :
-		(r_slave_sel_reg==SRAM) ? rdata2 : 32'b0;
-
-	assign rresp = (r_slave_sel_reg==UART) ? rresp0 :
-		(r_slave_sel_reg==CLINT) ? rresp1 :
-		(r_slave_sel_reg==SRAM) ? rresp2 : DECERR;
-
-	assign rvalid = (r_slave_sel_reg==UART) ? rvalid0 :
-		(r_slave_sel_reg==CLINT) ? rvalid1 :
-		(r_slave_sel_reg==SRAM) ? rvalid2 : 1;
-
-	assign rlast = (r_slave_sel_reg==UART) ? rlast0 :
-		(r_slave_sel_reg==CLINT) ? rlast1 :
-		(r_slave_sel_reg==SRAM) ? rlast2 : 1;
-
-	assign rid = (r_slave_sel_reg==UART) ? rid0 :
-		(r_slave_sel_reg==CLINT) ? rid1 :
-		(r_slave_sel_reg==SRAM) ? rid2 : rid_reg;
-
-
-
 	//W
 
-	assign {awaddr0, awaddr1, awaddr2} =
-		(w_slave_sel_reg==UART) ? {awaddr, 64'b0} :
-		(w_slave_sel_reg==CLINT) ? {32'b0, awaddr, 32'b0} :
-		(w_slave_sel_reg==SRAM) ? {64'b0, awaddr} : {96'b0};
+	assign {awaddr0, awaddr1} = (w_slave_sel_reg==CLINT) ? {awaddr, 32'b0} : {32'b0, awaddr};
+	assign {awvalid0, awvalid1} = (w_slave_sel_reg==CLINT) ? {awvalid, 1'b0} : {1'b0, awvalid};
+	assign {awid0, awid1} = (w_slave_sel_reg==CLINT) ? {awid, 4'b0} : {4'b0, awid};
+	assign {awlen0, awlen1} = (w_slave_sel_reg==CLINT) ? {awlen, 8'b0} : {8'b0, awlen};
+	assign {awsize0, awsize1} = (w_slave_sel_reg==CLINT) ? {awsize, 3'b0} : {3'b0, awsize};
+	assign {awburst0, awburst1} = (w_slave_sel_reg==CLINT) ? {awburst, 2'b0} : {2'b0, awburst};
 
-	assign {awvalid0, awvalid1, awvalid2} =
-		(w_slave_sel_reg==UART) ? {awvalid, 2'b0} :
-		(w_slave_sel_reg==CLINT) ? {1'b0, awvalid, 1'b0} :
-		(w_slave_sel_reg==SRAM) ? {2'b0, awvalid} : {3'b0};
+	assign {wdata0, wdata1} = (w_slave_sel_reg==CLINT) ? {wdata, 32'b0} : {32'b0, wdata};
+	assign {wstrb0, wstrb1} = (w_slave_sel_reg==CLINT) ? {wstrb, 4'b0} : {4'b0, wstrb};
+	assign {wvalid0, wvalid1} = (w_slave_sel_reg==CLINT) ? {wvalid, 1'b0} : {1'b0, wvalid};
+	assign {wlast0, wlast1} = (w_slave_sel_reg==CLINT) ? {wlast, 1'b0} : {1'b0, wlast};
+	assign {bready0, bready1} = (w_slave_sel_reg==CLINT) ? {bready, 1'b0} : {1'b0, bready};
 
-	assign {awid0, awid1, awid2} =
-		(r_slave_sel_reg==UART) ? {awid, 8'b0} :
-		(r_slave_sel_reg==CLINT) ? {4'b0, awid, 4'b0} :
-		(r_slave_sel_reg==SRAM) ? {8'b0, awid} : {12'b0};
-
-	assign {awlen0, awlen1, awlen2} =
-		(r_slave_sel_reg==UART) ? {awlen, 16'b0} :
-		(r_slave_sel_reg==CLINT) ? {8'b0, awlen, 8'b0} :
-		(r_slave_sel_reg==SRAM) ? {16'b0, awlen} : {24'b0};
-
-	assign {awsize0, awsize1, awsize2} =
-		(r_slave_sel_reg==UART) ? {awsize, 6'b0} :
-		(r_slave_sel_reg==CLINT) ? {3'b0, awsize, 3'b0} :
-		(r_slave_sel_reg==SRAM) ? {6'b0, awsize} : {9'b0};
-
-	assign {awburst0, awburst1, awburst2} =
-		(r_slave_sel_reg==UART) ? {awburst, 4'b0} :
-		(r_slave_sel_reg==CLINT) ? {2'b0, awburst, 2'b0} :
-		(r_slave_sel_reg==SRAM) ? {4'b0, awburst} : {6'b0};
-
-
-	assign {wdata0, wdata1, wdata2} =
-		(w_slave_sel_reg==UART) ? {wdata, 64'b0} :
-		(w_slave_sel_reg==CLINT) ? {32'b0, wdata, 32'b0} :
-		(w_slave_sel_reg==SRAM) ? {64'b0, wdata} : {96'b0};
-
-	assign {wstrb0, wstrb1, wstrb2} =
-		(w_slave_sel_reg==UART) ? {wstrb, 8'b0} :
-		(w_slave_sel_reg==CLINT) ? {4'b0, wstrb, 4'b0} :
-		(w_slave_sel_reg==SRAM) ? {8'b0, wstrb} : {12'b0};
-
-	assign {wvalid0, wvalid1, wvalid2} =
-		(w_slave_sel_reg==UART) ? {wvalid, 2'b0} :
-		(w_slave_sel_reg==CLINT) ? {1'b0, wvalid, 1'b0} :
-		(w_slave_sel_reg==SRAM) ? {2'b0, wvalid} : {3'b0};
-
-	assign {wlast0, wlast1, wlast2} =
-		(w_slave_sel_reg==UART) ? {wlast, 2'b0} :
-		(w_slave_sel_reg==CLINT) ? {1'b0, wlast, 1'b0} :
-		(w_slave_sel_reg==SRAM) ? {2'b0, wlast} : {3'b0};
-
-	assign {bready0, bready1, bready2} =
-		(w_slave_sel_reg==UART) ? {bready, 2'b0} :
-		(w_slave_sel_reg==CLINT) ? {1'b0, bready, 1'b0} :
-		(w_slave_sel_reg==SRAM) ? {2'b0, bready} : {3'b0};
-
-
-	assign awready = (w_slave_sel_reg==UART) ? awready0 :
-		(w_slave_sel_reg==CLINT) ? awready1 :
-		(w_slave_sel_reg==SRAM) ? awready2 : 1;
-
-	assign wready = (w_slave_sel_reg==UART) ? wready0 :
-		(w_slave_sel_reg==CLINT) ? wready1 :
-		(w_slave_sel_reg==SRAM) ? wready2 : 1;
-
-	assign bresp = (w_slave_sel_reg==UART) ? bresp0 :
-		(w_slave_sel_reg==CLINT) ? bresp1 :
-		(w_slave_sel_reg==SRAM) ? bresp2 : DECERR;
-
-	assign bvalid = (w_slave_sel_reg==UART) ? bvalid0 :
-		(w_slave_sel_reg==CLINT) ? bvalid1 :
-		(w_slave_sel_reg==SRAM) ? bvalid2 : 1;
-
-	assign bid = (r_slave_sel_reg==UART) ? bid0 :
-		(r_slave_sel_reg==CLINT) ? bid1 :
-		(r_slave_sel_reg==SRAM) ? bid2 : bid_reg;
+	assign awready = (w_slave_sel_reg==CLINT) ? awready0 : awready1;
+	assign wready = (w_slave_sel_reg==CLINT) ? wready0 : wready1;
+	assign bresp = (w_slave_sel_reg==CLINT) ? bresp0 : bresp1;
+	assign bvalid = (w_slave_sel_reg==CLINT) ? bvalid0 : bvalid1;
+	assign bid = (w_slave_sel_reg==CLINT) ? bid0 : bid1;
 
 endmodule

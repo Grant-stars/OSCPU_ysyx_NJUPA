@@ -1,4 +1,4 @@
-module memory_access(
+module arbiter(
 	input clk,
 	input rst,
 

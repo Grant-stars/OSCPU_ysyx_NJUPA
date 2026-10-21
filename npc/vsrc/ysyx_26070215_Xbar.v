@@ -1,4 +1,4 @@
-module Xbar(
+module ysyx_26070215_Xbar(
 	input clk,
 	input rst,
 	input access,

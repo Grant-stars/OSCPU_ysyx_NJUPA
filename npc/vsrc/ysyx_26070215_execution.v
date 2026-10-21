@@ -1,4 +1,4 @@
-module execution(
+module ysyx_26070215_execution(
     input [31:0] op1,
     input [31:0] op2,
     input [4:0] alu_op,
@@ -37,7 +37,7 @@ assign alu_cmp = (alu_op==ALU_SLT) | (alu_op==ALU_SLTU) | (alu_op==ALU_BEQ) |
 assign Cin = (alu_op==ALU_SUB) | alu_cmp;
 assign target_address = offset + base;
 
-adder ADDER(
+ysyx_26070215_adder ysyx_26070215_ADDER(
 	.A1(op1),
 	.B1(op2),
 	.Cin(Cin),

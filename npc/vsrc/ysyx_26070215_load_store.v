@@ -1,4 +1,4 @@
-module load_store(
+module ysyx_26070215_load_store(
 	input rst,
 	input clk,
     input [4:0] ls_type,

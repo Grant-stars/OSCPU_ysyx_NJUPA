@@ -1,5 +1,5 @@
 `define GPR_ADDR_WIDTH 5
-module writeback(
+module ysyx_26070215_writeback(
     input w,
     input [4:0] rd,
     input [31:0] data,

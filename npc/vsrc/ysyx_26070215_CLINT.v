@@ -1,4 +1,4 @@
-module CLINT(
+module ysyx_26070215_CLINT(
 	input clk,
 	input rst,
 	//AR

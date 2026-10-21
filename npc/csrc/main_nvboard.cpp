@@ -1,6 +1,9 @@
-#include "Vtop.h"
+#include "VysyxSoCFull.h"
 #include <nvboard.h>
 #include "verilated_fst_c.h"  
+
+extern "C" void flash_read(int32_t addr, int32_t *data) { assert(0); }
+extern "C" void mrom_read(int32_t addr, int32_t *data) { assert(0); }						   
 
 static TOP_NAME dut;
 

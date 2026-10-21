@@ -1,6 +1,6 @@
 #include "include/cpu.h"
 #include "svdpi.h"
-#include "Vtop__Dpi.h"
+#include "VysyxSoCFull__Dpi.h"
 #include <assert.h>
 #include <stdio.h>
 #include <sys/types.h>

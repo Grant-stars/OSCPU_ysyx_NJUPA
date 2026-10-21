@@ -1,12 +1,14 @@
 WAVE_FORMAT = fst
 WAVE_FILE = wave.$(WAVE_FORMAT)
-CHECKFLAGS = --lint-only -Wall
 
-TOPNAME = top
+NPC_CHECKFLAGS = --lint-only -Wall 
+SOC_CHECKFLAGS = --lint-only $(INCFLAGS) --top-module $(TOPNAME) --timescale "1ns/1ns" --no-timing
+
+TOPNAME = ysyxSoCFull
 VERILATOR = verilator
 VERILATOR_CFLAGS += -MMD --build -cc  \
-				-O3 --x-assign fast --x-initial fast --noassert -Wall	\
-				--CFLAGS "-ggdb -O0"
+				-O3 --x-assign fast --x-initial fast --noassert \
+				--CFLAGS "-ggdb -O0" --timescale "1ns/1ns" --no-timing	
 
 BUILD_DIR = ./build
 OBJ_DIR = $(BUILD_DIR)/obj_dir
@@ -23,12 +25,15 @@ $(SRC_AUTO_BIND): $(NXDC_FILES)
 	python3 $(NVBOARD_HOME)/scripts/auto_pin_bind.py $^ $@
 
 # project source
-VSRCS = $(shell find $(abspath ./vsrc) -name "*.v")
+NPC_VSRCS = $(shell find $(abspath ./vsrc) -name "*.v")
+VSRCS = $(NPC_VSRCS)
+VSRCS += $(shell find $(abspath ../ysyxSoC/perip) -name "*.v")
+VSRCS += $(shell find $(abspath ../ysyxSoC/build/ysyxSoCFull.v) -name "*.v")
 CSRCS = $(shell find $(abspath ./csrc) -name "*.c" -or -name "*.cc" -or -name "*.cpp")
 
 
 # rules for verilator
-INCFLAGS = $(addprefix -I , $(INC_PATH))
+INCFLAGS = $(addprefix -I, $(INC_PATH))
 CXXFLAGS += $(INCFLAGS) -DTOP_NAME="\"V$(TOPNAME)\""
 LDFLAGS += -lreadline
 
@@ -62,10 +67,13 @@ else
   CSRCS:=$(filter-out %main_nvboard.cpp, $(CSRCS))
 endif
 
+INC_PATH += ../ysyxSoC/perip/uart16550/rtl
+INC_PATH += ../ysyxSoC/perip/spi/rtl
+VERILATOR_CFLAGS += $(INCFLAGS)
 
 $(BIN): $(VSRCS) $(CSRCS) $(NVBOARD_ARCHIVE)
 	@rm -rf $(OBJ_DIR)
-	$(VERILATOR) $(VERILATOR_CFLAGS) \
+	$(VERILATOR) $(VERILATOR_CFLAGS) --trace-$(WAVE_FORMAT)\
 		--top-module $(TOPNAME) $^ \
 		$(addprefix -CFLAGS , $(CXXFLAGS)) $(addprefix -LDFLAGS , $(LDFLAGS)) \
 		--Mdir $(OBJ_DIR) --exe -o $(abspath $(BIN))
@@ -73,7 +81,7 @@ $(BIN): $(VSRCS) $(CSRCS) $(NVBOARD_ARCHIVE)
 # 当run把$(BIN)当作依赖时，Makefile 会递归解析这个依赖：发现它
 # 是「有规则的目标」→ 自动执行其编译规则，完成文件的创建 / 更新，
 # 直到$(BIN)变成「符合状态要求的文件」。紧接着由于伪目标，所以命令$(BIN)
-# 一定会执行，即执行Vtop
+# 一定会执行，即执行VysyxSoCFull
 
 run: $(BIN)
 	@$^
@@ -95,7 +103,10 @@ sim: $(VSRCS) $(CSRCS) $(NVBOARD_ARCHIVE)
 
 
 check: $(VSRCS)
-	$(VERILATOR) $(CHECKFLAGS) $(VSRCS) 
+	@echo "checking npc: "
+	$(VERILATOR) $(NPC_CHECKFLAGS) $(NPC_VSRCS) 
+	@echo "checking soc: "
+	$(VERILATOR) $(SOC_CHECKFLAGS) $(VSRCS) 
 
 clean:
 	rm -rf ./$(BUILD_DIR)

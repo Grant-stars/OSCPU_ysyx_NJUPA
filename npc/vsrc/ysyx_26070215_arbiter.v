@@ -1,4 +1,4 @@
-module arbiter(
+module ysyx_26070215_arbiter(
 	input clk,
 	input rst,
 

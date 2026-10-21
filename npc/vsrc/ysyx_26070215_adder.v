@@ -1,4 +1,4 @@
-module adder(
+module ysyx_26070215_adder(
 	input [31:0] A1,
 	input [31:0] B1,
 	input Cin,

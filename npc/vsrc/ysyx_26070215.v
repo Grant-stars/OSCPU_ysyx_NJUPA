@@ -8,12 +8,10 @@ import "DPI-C" function int pmem_read(input int raddr);
 import "DPI-C" function void pmem_write(
     input int waddr, input int wdata, input byte wmask);
 `define GPR_ADDR_WIDTH 5
-module top(
-  input clk,
-  input rst,
-  output [31:0] pc,
-  output [31:0] inst,
-
+module ysyx_26070215(
+  input clock,
+  input reset,
+  input io_interrupt,
 
   output [31:0] io_master_araddr,
   output io_master_arvalid,
@@ -43,9 +41,67 @@ module top(
   input [1:0] io_master_bresp,
   input io_master_bvalid,
   output io_master_bready,
-  input [3:0] io_master_bid
-
+  input [3:0] io_master_bid,
+  
+  input [31:0] io_slave_araddr,
+  input io_slave_arvalid,
+  output io_slave_arready,
+  input [3:0] io_slave_arid,
+  input [7:0] io_slave_arlen,
+  input [2:0] io_slave_arsize,
+  input [1:0] io_slave_arburst,
+  output [31:0] io_slave_rdata,
+  output [1:0] io_slave_rresp,
+  output io_slave_rvalid,
+  input io_slave_rready,
+  output io_slave_rlast,
+  output [3:0] io_slave_rid,
+  input [31:0] io_slave_awaddr,
+  input io_slave_awvalid,
+  output io_slave_awready,
+  input [3:0] io_slave_awid,
+  input [7:0] io_slave_awlen,
+  input [2:0] io_slave_awsize,
+  input [1:0] io_slave_awburst,
+  input [31:0] io_slave_wdata,
+  input [3:0] io_slave_wstrb,
+  input io_slave_wvalid,
+  output io_slave_wready,
+  input io_slave_wlast,
+  output [1:0] io_slave_bresp,
+  output io_slave_bvalid,
+  input io_slave_bready,
+  output [3:0] io_slave_bid
   );
+
+  assign io_slave_arready = 1'b0;
+  assign io_slave_rdata   = 32'b0;
+  assign io_slave_rresp   = 2'b0;
+  assign io_slave_rvalid  = 1'b0;
+  assign io_slave_rlast   = 1'b0;
+  assign io_slave_rid     = 4'b0;
+  assign io_slave_awready = 1'b0;
+  assign io_slave_wready  = 1'b0;
+  assign io_slave_bresp   = 2'b0;
+  assign io_slave_bvalid  = 1'b0;
+  assign io_slave_bid     = 4'b0;
+
+  wire _unused = &{1'b0,
+    io_interrupt,
+
+    io_slave_araddr, io_slave_arvalid, io_slave_arid, io_slave_arlen,
+    io_slave_arsize, io_slave_arburst, io_slave_arready,
+
+    io_slave_rdata, io_slave_rresp, io_slave_rvalid, io_slave_rready,
+    io_slave_rlast, io_slave_rid,
+
+    io_slave_awaddr, io_slave_awvalid, io_slave_awid, io_slave_awlen,
+    io_slave_awsize, io_slave_awburst, io_slave_awready,
+
+    io_slave_wdata, io_slave_wstrb, io_slave_wvalid, io_slave_wready,
+    io_slave_wlast,
+
+    io_slave_bresp, io_slave_bvalid, io_slave_bready, io_slave_bid};
 
   //ebreak
   wire ebreak;
@@ -62,9 +118,9 @@ module top(
   wire [`GPR_ADDR_WIDTH-1:0] raddr1, raddr2, waddr;
   wire w_en;
 
-  RegisterFile #(`GPR_ADDR_WIDTH, 32) GPR (
-    .clk(clk),
-    .rst(rst),
+ ysyx_26070215_RegisterFile #(`GPR_ADDR_WIDTH, 32) ysyx_26070215_GPR (
+    .clk(clock),
+    .rst(reset),
     .rdata1(rdata1),
     .raddr1(raddr1),
     .rdata2(rdata2),
@@ -82,9 +138,9 @@ module top(
   wire [31:0] mepc, mcause, mtvec, mret_mepc;
   wire trap;
 
-  CSRs #(32) CSR (
-	.clk(clk),
-	.rst(rst),
+  ysyx_26070215_CSRs #(32) ysyx_26070215_CSR (
+	.clk(clock),
+	.rst(reset),
 	.addr(csr_addr),
 	.wdata(csr_wdata),
 	.wen(csr_wen),
@@ -171,9 +227,9 @@ module top(
 
 
 	wire Bus_access;
-  arbiter arbiter(
-	.clk(clk),
-	.rst(rst),
+  ysyx_26070215_arbiter ysyx_26070215_arbiter(
+	.clk(clock),
+	.rst(reset),
 
 	.araddr0(ifu_araddr),
 	.arvalid0(ifu_arvalid),
@@ -301,9 +357,9 @@ module top(
   wire Xbar_bready;
   wire [3:0] Xbar_bid;
 	
-  Xbar Xbar(
-	.clk(clk),
-	.rst(rst),
+  ysyx_26070215_Xbar ysyx_26070215_Xbar(
+	.clk(clock),
+	.rst(reset),
 	.access(Bus_access),
 
 	.araddr(Xbar_araddr),
@@ -429,9 +485,9 @@ module top(
   wire clint_bready;
   wire [3:0] clint_bid;
 	
-  CLINT CLINT(
-	 .clk(clk),
-	 .rst(rst),
+  ysyx_26070215_CLINT ysyx_26070215_CLINT(
+	 .clk(clock),
+	 .rst(reset),
 	 .araddr(clint_araddr),
 	 .arvalid(clint_arvalid),
 	 .arready(clint_arready),
@@ -469,10 +525,12 @@ module top(
   wire [1:0] jump;
   wire [31:0] target_address;
   wire ifu_valid;
+  wire [31:0] pc /*verilator public*/;
+  wire [31:0] inst /*verilator public*/;
 
-  inst_fetch IFU(
-    .rst(rst),
-    .clk(clk),
+  ysyx_26070215_inst_fetch ysyx_26070215_IFU(
+    .rst(reset),
+    .clk(clock),
 	.target_address(target_address),
 	.flag(outdata[0]),
     .jump(jump),
@@ -525,7 +583,7 @@ module top(
   wire idu_valid;
   wire idu_ready;
 
-  inst_decode IDU(
+  ysyx_26070215_inst_decode ysyx_26070215_IDU(
     .inst(inst),
 	.pc(pc),
     .rdata1(rdata1),
@@ -564,7 +622,7 @@ module top(
   wire exu_valid;
   wire exu_ready;
   
-  execution EXU(
+  ysyx_26070215_execution ysyx_26070215_EXU(
     .op1(op1),
     .op2(op2),
     .alu_op(alu_op),
@@ -583,9 +641,9 @@ module top(
   wire [31:0] lsu_to_wbu_data;
   wire lsu_ready, lsu_to_wbu_valid;
 
-  load_store LSU(
-	.rst(rst),
-	.clk(clk),
+  ysyx_26070215_load_store ysyx_26070215_LSU(
+	.rst(reset),
+	.clk(clock),
     .ls_type(ls_type),
     .addr(outdata),
     .rdata_to_wbu(lsu_to_wbu_data),
@@ -631,7 +689,7 @@ module top(
   wire wbu_valid;
   wire wbu_ready;
 
-  writeback WBU(
+  ysyx_26070215_writeback ysyx_26070215_WBU(
     .w(w),
     .rd(rd),
     .data(outdata),

@@ -1,4 +1,4 @@
-module RegisterFile #(ADDR_WIDTH = 4, DATA_WIDTH = 32) (
+module ysyx_26070215_RegisterFile #(ADDR_WIDTH = 4, DATA_WIDTH = 32) (
   input clk,
   input rst,
   output [DATA_WIDTH-1:0] rdata1,

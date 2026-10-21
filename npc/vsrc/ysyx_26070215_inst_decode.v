@@ -1,5 +1,5 @@
 `define GPR_ADDR_WIDTH 5
-module inst_decode(
+module ysyx_26070215_inst_decode(
     input [31:0] inst,
 	input [31:0] pc,
 	input [31:0] rdata1,

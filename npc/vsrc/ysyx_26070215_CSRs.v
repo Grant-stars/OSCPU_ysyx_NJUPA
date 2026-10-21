@@ -1,4 +1,4 @@
-module CSRs #(DATA_WIDTH = 32) (
+module ysyx_26070215_CSRs #(DATA_WIDTH = 32) (
 	input clk,
 	input rst,
 	input [11:0] addr,

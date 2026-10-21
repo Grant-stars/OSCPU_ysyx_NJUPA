@@ -7,16 +7,22 @@
 #include "common.h"
 #include "include/cpu.h"
 
-#include "Vtop.h" 
-#include "Vtop_top.h" 
-#include "Vtop_RegisterFile__A5.h"
-#include "Vtop_inst_decode.h"
-#include "Vtop_inst_fetch.h"
+#include "VysyxSoCFull.h" 
+#include "VysyxSoCFull_ysyxSoCFull.h" 
+#include "VysyxSoCFull_ysyxSoCASIC.h" 
+#include "VysyxSoCFull_CPU.h" 
+#include "VysyxSoCFull_ysyx_26070215.h" 
+#include "VysyxSoCFull_ysyx_26070215_RegisterFile__A5.h"
+#include "VysyxSoCFull_ysyx_26070215_inst_decode.h"
+#include "VysyxSoCFull_ysyx_26070215_inst_fetch.h"
 #include "verilated.h" 
 #include "verilated_fst_c.h"   //引入波形相关头文件
-							   
+							   //
+extern "C" void flash_read(int32_t addr, int32_t *data) { assert(0); }
+extern "C" void mrom_read(int32_t addr, int32_t *data) { assert(0); }						   
+
 VerilatedContext* contextp = new VerilatedContext;
-Vtop* top = new Vtop{contextp};
+VysyxSoCFull* top = new VysyxSoCFull{contextp};
 VerilatedFstC* tfp = new VerilatedFstC; //创建一个 Verilator 提供的 FST 波形记录对象
 
 bool end;
@@ -46,9 +52,9 @@ CPU_state cpu;
 
 void CPU_update(){
 	for(int i=0; i<32; i++){
-		cpu.gpr[i] = top->top->GPR->rf[i];
+		cpu.gpr[i] = top->ysyxSoCFull->asic->cpu->cpu->ysyx_26070215_GPR->rf[i];
 	}
-	cpu.pc = top->pc;
+	cpu.pc = top->ysyxSoCFull->asic->cpu->cpu->pc;
 }
 
 void CPU_reset(){
@@ -61,16 +67,16 @@ void CPU_reset(){
 uint32_t reg_read(const char *s, bool *success){
   if(!strcmp(s,"0")){
     *success = true;
-    return top->top->GPR->rf[0];
+    return top->ysyxSoCFull->asic->cpu->cpu->ysyx_26070215_GPR->rf[0];
   }
   else if(!strcmp(s,"pc")){
     *success = true;
-    return top->pc;    
+    return top->ysyxSoCFull->asic->cpu->cpu->pc;    
   }
   for(int i=1; i<32; i++){
     if(!strcmp(s,regs[i])){
       *success = true;
-      return top->top->GPR->rf[i];
+      return top->ysyxSoCFull->asic->cpu->cpu->ysyx_26070215_GPR->rf[i];
     }
   }
   *success=false;
@@ -80,9 +86,9 @@ uint32_t reg_read(const char *s, bool *success){
 void reg_display(){
 
 	for(int i =0;i<32;i++){
-		printf("%-15s0x%-20" PRIX32 "%-20" PRIu32 "\n",regs[i], top->top->GPR->rf[i],top->top->GPR->rf[i]);
+		printf("%-15s0x%-20" PRIX32 "%-20" PRIu32 "\n",regs[i], top->ysyxSoCFull->asic->cpu->cpu->ysyx_26070215_GPR->rf[i],top->ysyxSoCFull->asic->cpu->cpu->ysyx_26070215_GPR->rf[i]);
 	}
-	printf("%-15s0x%-20" PRIX32 "0x%-20" PRIX32 "\n","pc", top->pc, top->pc);
+	printf("%-15s0x%-20" PRIX32 "0x%-20" PRIX32 "\n","pc", top->ysyxSoCFull->asic->cpu->cpu->pc, top->ysyxSoCFull->asic->cpu->cpu->pc);
   
 }
 
@@ -104,7 +110,7 @@ bool reg_check(CPU_state *ref_r, uint32_t pc){
 void trace_and_difftest(uint32_t pc, uint32_t inst, uint32_t npc){
 	static uint8_t inst_finish= 0;
 	uint8_t inst_finish_reg = inst_finish;
-	inst_finish = top->top->IFU->inst_finish;
+	inst_finish = top->ysyxSoCFull->asic->cpu->cpu->ysyx_26070215_IFU->inst_finish;
 	if(!inst_finish_reg) return ;
 #ifdef CONFIG_ITRACE
 	disasm(pc, inst);
@@ -112,42 +118,42 @@ void trace_and_difftest(uint32_t pc, uint32_t inst, uint32_t npc){
 	if(g_print_step) {puts(log_buf);} 
 #endif
 #ifdef CONFIG_FTRACE
-	func_check(top->top->IDU->jump, top->top->IDU->rs1, top->top->IDU->rd, pc, top->pc);
+	func_check(top->ysyxSoCFull->asic->cpu->cpu->ysyx_26070215_IDU->jump, top->ysyxSoCFull->asic->cpu->cpu->ysyx_26070215_IDU->rs1, top->ysyxSoCFull->asic->cpu->cpu->ysyx_26070215_IDU->rd, pc, top->ysyxSoCFull->asic->cpu->cpu->pc);
 #endif
   IFDEF(CONFIG_DIFFTEST, difftest_step(pc, npc));
 }
 
 
 static void single_cycle() {
-    top->clk = 0; top->eval(); 
+    top->clock = 0; top->eval(); 
     tfp->dump(contextp->time());    //采样
     contextp->timeInc(1);         // 时间+1
 
-    top->clk = 1; top->eval(); 
+    top->clock = 1; top->eval(); 
     tfp->dump(contextp->time());    //采样
     contextp->timeInc(1);         // 时间+1
 }
 
 
 static void reset(int n) {
-    top->rst = 1;
+    top->reset = 1;
     while (n -- > 0) single_cycle();
-    top->rst = 0;
+    top->reset = 0;
 }
 
 
 int exec_once(){
-	uint32_t trace_pc=top->pc;
-	uint32_t trace_inst=top->inst;
+	uint32_t trace_pc=top->ysyxSoCFull->asic->cpu->cpu->pc;
+	uint32_t trace_inst=top->ysyxSoCFull->asic->cpu->cpu->inst;
 	single_cycle();
 	g_nr_guest_inst++;
-	trace_and_difftest(trace_pc, trace_inst, top->pc);
+	trace_and_difftest(trace_pc, trace_inst, top->ysyxSoCFull->asic->cpu->cpu->pc);
 	if(exception){
 		end=true;
 		return 1;
 	}
 	else if(end){
-		good = (top->top->GPR->rf[10] == 0);
+		good = (top->ysyxSoCFull->asic->cpu->cpu->ysyx_26070215_GPR->rf[10] == 0);
 		
 		if(good){
 			printf("%s\n", ANSI_FMT("HIT GOOD TRAP", ANSI_FG_GREEN));
@@ -161,7 +167,7 @@ int exec_once(){
 		#ifdef CONFIG_WATCHPOINT
 			bool trigger = scan_wp();
 			if(trigger){
-				printf("Program stopped at: 0x%.8x\n", top->pc);
+				printf("Program stopped at: 0x%.8x\n", top->ysyxSoCFull->asic->cpu->cpu->pc);
 				return 1;
 			}
 		#endif
@@ -189,8 +195,9 @@ int main(int argc, char** argv) {
     //初始化仿真模型
     contextp = new VerilatedContext;
     contextp->commandArgs(argc, argv);
-    top = new Vtop{contextp};
+    top = new VysyxSoCFull{contextp};
 
+	Verilated::commandArgs(argc, argv);
     //初始化波形跟踪
     contextp->traceEverOn(true);  //开启波形跟踪
     tfp = new VerilatedFstC; //创建一个 Verilator 提供的 FST 波形记录对象

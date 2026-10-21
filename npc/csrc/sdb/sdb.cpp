@@ -17,7 +17,7 @@
 #include <readline/history.h>
 #include <stdint.h>
 #include "../common.h"
-#include "Vtop.h" 
+#include "VysyxSoCFull.h" 
 #include "verilated.h" 
 #include "verilated_fst_c.h"   //引入波形相关头文件
 

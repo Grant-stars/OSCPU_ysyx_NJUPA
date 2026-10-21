@@ -1,4 +1,4 @@
-module inst_fetch(
+module ysyx_26070215_inst_fetch(
     input rst,
     input clk,
     input [31:0] target_address,

@@ -18,6 +18,7 @@
 #include <difftest-def.h>
 #include <memory/paddr.h>
 #include <readline/readline.h>
+#include <memory/ysyxsoc.h>
 
 // 在DUT host memory的`buf`和REF guest memory的`addr`之间拷贝`n`字节,
 // `direction`指定拷贝的方向, `DIFFTEST_TO_DUT`表示往DUT拷贝, `DIFFTEST_TO_REF`表示往REF拷贝
@@ -36,10 +37,10 @@ void execute(uint64_t n);
 
 __EXPORT void difftest_memcpy(paddr_t addr, void *buf, size_t n, bool direction) {
 	if(direction==DIFFTEST_TO_DUT){
-		memcpy(buf, guest_to_host(addr), n);
+		memcpy(buf, mrom_to_host(addr), n);
 	}
 	else if(direction==DIFFTEST_TO_REF){
-		memcpy(guest_to_host(addr), buf, n);
+		memcpy(mrom_to_host(addr), buf, n);
 	}
 }
 

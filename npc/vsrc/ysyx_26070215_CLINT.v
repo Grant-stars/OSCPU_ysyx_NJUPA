@@ -84,8 +84,8 @@ parameter [1:0] SLVERR = 2'b10;
 			if(araddr_reg==`UPTIME_ADDR)	rdata <= mtime[31:0];
 			else if(araddr_reg==(`UPTIME_ADDR + 32'd4))	rdata <= mtime[63:32];
 			else rdata <= 0;
-		end
 		difftest_skip();
+		end
 	end
 
 	//W

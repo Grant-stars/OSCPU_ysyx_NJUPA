@@ -7,7 +7,7 @@ SOC_CHECKFLAGS = --lint-only $(INCFLAGS) --top-module $(TOPNAME) --timescale "1n
 TOPNAME = ysyxSoCFull
 VERILATOR = verilator
 VERILATOR_CFLAGS += -MMD --build -cc  \
-				-O3 --x-assign fast --x-initial fast --noassert \
+				-O3 --x-assign fast --x-initial fast --noassert --autoflush \
 				--CFLAGS "-ggdb -O0" --timescale "1ns/1ns" --no-timing	
 
 BUILD_DIR = ./build

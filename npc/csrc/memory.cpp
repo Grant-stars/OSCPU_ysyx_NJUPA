@@ -6,10 +6,13 @@ uint8_t MEM[CONFIG_MSIZE];
 #define RTC_ADDR          0x02000000
 #define UPTIME_ADDR       (CLOCK_ADDR + 8)
 #define SERIAL_PORT       0x10000000
+uint8_t MROM[MROM_SIZE];
 
 extern CPU_state cpu;
 
 uint8_t* guest_to_host(uint32_t paddr) { return MEM + paddr - CONFIG_MBASE; }
+uint8_t* mrom_to_host(uint32_t paddr) { return MROM + paddr - MROM_BASE; }
+
 void is_out_of_bound(uint32_t addr) {
 	CPU_update();
 	if(likely(addr >= PMEM_LEFT && addr <= PMEM_RIGHT)){

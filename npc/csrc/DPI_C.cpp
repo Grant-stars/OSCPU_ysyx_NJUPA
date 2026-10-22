@@ -9,6 +9,7 @@
 #include <stdint.h>
 #include "common.h"
 extern uint8_t MEM[];
+extern uint8_t MROM[];
 extern bool* end_ptr;
 extern bool exception;
 extern CPU_state cpu;
@@ -18,6 +19,8 @@ extern CPU_state cpu;
 #define RTC_ADDR          0x02000000
 #define UPTIME_ADDR       (CLOCK_ADDR + 8)
 #define SERIAL_PORT       0x10000000
+
+
 
 #define SHIFTMASK(n) ({ (wmask >> n)&(0x1u)? (0b11111111)<<(n*8) : 0x0; })
 #define MASK(wmask) ({ SHIFTMASK(0) | SHIFTMASK(1) | SHIFTMASK(2) | SHIFTMASK(3); })
@@ -128,6 +131,12 @@ void pmem_write(int waddr, int wdata, char wmask) {
     *(uint32_t*)(MEM+(waddr & ~0x3u)-CONFIG_MBASE) = new_data;
     return ;
 }
+
+extern "C" void flash_read(int32_t addr, int32_t *data) { assert(0); }
+extern "C" void mrom_read(int32_t addr, int32_t *data) {
+	Assert(addr>=MROM_BASE && addr < MROM_BASE + MROM_SIZE, "MROM addr error!\n");
+    *data = *(int*)(MROM+(addr & ~0x3u)-MROM_BASE);
+}						   
 
 
 void finish(){

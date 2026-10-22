@@ -16,8 +16,11 @@
 #define RESET_VECTOR (PMEM_LEFT + CONFIG_PC_RESET_OFFSET)
 
 
-uint8_t* guest_to_host(uint32_t paddr);
+#define MROM_SIZE		  0x1000
+#define MROM_BASE		  0x20000000
 
+uint8_t* guest_to_host(uint32_t paddr);
+uint8_t* mrom_to_host(uint32_t paddr);
 
 typedef uint32_t word_t; 
 
@@ -35,6 +38,6 @@ typedef uint32_t word_t;
 
 #endif
 
-//#define CONFIG_DIFFTEST 1
+#define CONFIG_DIFFTEST 1
 
 #endif

@@ -108,7 +108,6 @@ module ysyx_26070215(
 
   always @(*) begin
     if(ebreak & idu_valid) begin
-      $display("FINISH");
       finish();
     end
   end

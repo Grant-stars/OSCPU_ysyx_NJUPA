@@ -52,7 +52,6 @@ module ysyx_26070215_inst_fetch(
     parameter [1:0] JUMP_NOP = 0, JUMP_JALR = 1, JUMP_JAL =2, JUMP_CB = 3;
 	parameter IDLE = 0, WAIT_AR_READY = 1, WAIT_R = 2, WAIT_HANDLE = 3;
     initial begin
-        pc = 32'h80000000;
 		inst_reg = pmem_read(32'h80000000);
     end
 
@@ -68,7 +67,7 @@ module ysyx_26070215_inst_fetch(
     end
 
     always @(posedge clk)begin
-        if(rst) pc<=32'h80000000;
+        if(rst) pc<=32'h20000000;
         else if(inst_finish) begin
             pc<=dnpc;
         end

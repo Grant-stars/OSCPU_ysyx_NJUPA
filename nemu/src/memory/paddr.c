@@ -19,10 +19,13 @@
 #include <device/mmio.h>
 #include <isa.h>
 #include <stdint.h>
+#include <memory/ysyxsoc.h>
 
 //only when compiled as ref
 static inline bool in_dut_pmem(paddr_t addr){
-	if(addr == 0x10000000 || (addr >= 0x02000000 && addr <= 0x02000000+0xffff)){
+	if(addr == 0x10000000 || 
+		(addr >= 0x02000000 && addr <= 0x0200ffff) ||
+		(addr >= 0x10000000 && addr <= 0x10000fff )){
 		return true;
 	}
 	else{
@@ -65,6 +68,12 @@ void init_mem() {
 }
 
 word_t paddr_read(paddr_t addr, int len) {
+#ifdef CONFIG_TARGET_SHARE
+ if (in_mrom(addr))  return mrom_read(addr, len); 
+ if (in_sram(addr))  return sram_read(addr, len); 
+ if(in_dut_pmem(addr)) return 0;
+#endif
+
   #ifdef CONFIG_MTRACE
     if(MTRACE_COND){
       log_write("memory read to memory: 0x%.8x with len=%d\n", addr, len); 
@@ -73,14 +82,17 @@ word_t paddr_read(paddr_t addr, int len) {
   #endif
   if (likely(in_pmem(addr))) return pmem_read(addr, len);
   IFDEF(CONFIG_DEVICE, return mmio_read(addr, len));
-#ifdef CONFIG_TARGET_SHARE
-	if(in_dut_pmem(addr)) return 0;
-#endif
   out_of_bound(addr);
   return 0;
 }
 
 void paddr_write(paddr_t addr, int len, word_t data) {
+#ifdef CONFIG_TARGET_SHARE
+ if (in_mrom(addr))  { mrom_write(addr, len, data); return; }
+ if (in_sram(addr))  { sram_write(addr, len, data); return; }
+ if(in_dut_pmem(addr)) return ;
+#endif
+
  #ifdef CONFIG_MTRACE
     if(MTRACE_COND){
       log_write("memory write to memory: 0x%.8x with len=%d, data=0x%.8x)\n", addr, len, data); 
@@ -89,8 +101,5 @@ void paddr_write(paddr_t addr, int len, word_t data) {
   #endif
  if (likely(in_pmem(addr))) { pmem_write(addr, len, data); return; }
   IFDEF(CONFIG_DEVICE, mmio_write(addr, len, data); return);
-#ifdef CONFIG_TARGET_SHARE
-	if(in_dut_pmem(addr)) return ;
-#endif
   out_of_bound(addr);
 }

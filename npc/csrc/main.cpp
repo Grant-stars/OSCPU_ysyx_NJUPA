@@ -17,9 +17,6 @@
 #include "VysyxSoCFull_ysyx_26070215_inst_fetch.h"
 #include "verilated.h" 
 #include "verilated_fst_c.h"   //引入波形相关头文件
-							   //
-extern "C" void flash_read(int32_t addr, int32_t *data) { assert(0); }
-extern "C" void mrom_read(int32_t addr, int32_t *data) { assert(0); }						   
 
 VerilatedContext* contextp = new VerilatedContext;
 VysyxSoCFull* top = new VysyxSoCFull{contextp};
@@ -61,7 +58,7 @@ void CPU_reset(){
 	for(int i=0; i<32; i++){
 		cpu.gpr[i] = 0;
 	}
-	cpu.pc = RESET_VECTOR;
+	cpu.pc = MROM_BASE;
 }
 
 uint32_t reg_read(const char *s, bool *success){

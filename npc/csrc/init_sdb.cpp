@@ -16,6 +16,7 @@
 #include "common.h"
 
 extern uint8_t MEM[CONFIG_MSIZE];
+extern uint8_t MROM[MROM_SIZE];
 
 static const uint32_t img [] = {
     0x00300513,          //addi a0,zero,3
@@ -45,6 +46,7 @@ static const uint32_t img [] = {
 void init_mem(){
 	memcpy(MEM, img, sizeof(img));
 };
+
 void init_log(const char *log_file);
 void init_elf(const char* elf_file);
 void init_difftest(char *ref_so_file, long img_size, int port);
@@ -59,7 +61,32 @@ static char *log_file = NULL;
 static char *diff_so_file = NULL;
 static char *img_file = NULL;
 static char *elf_file = NULL;
+static char *mrom_file = NULL;
 static int difftest_port = 1234;
+
+static long load_mrom() {
+  if (mrom_file == NULL) {
+    Log("No image is given. Use the default build-in image.");
+    return 4096; // built-in image size
+  }
+
+  FILE *fp = fopen(mrom_file, "rb");
+  Assert(fp, "Can not open '%s'", mrom_file);
+
+  fseek(fp, 0, SEEK_END);
+  long size = ftell(fp);
+
+  Log("The image is %s, size = %ld", mrom_file, size);
+
+  fseek(fp, 0, SEEK_SET);
+  int ret = fread(MROM, size, 1, fp);
+  assert(ret == 1);
+  Assert(ret<=CONFIG_MSIZE, "Insufficient MEM\n"); 
+
+  fclose(fp);
+  return size;
+}
+
 
 static long load_img() {
   if (img_file == NULL) {
@@ -92,16 +119,18 @@ static int parse_args(int argc, char *argv[]) {
     {"port"     , required_argument, NULL, 'p'},
     {"help"     , no_argument      , NULL, 'h'},
     {"elf"      , required_argument, NULL, 'e'},
+    {"mrom"     , required_argument, NULL, 'm'},
     {0          , 0                , NULL,  0 },
   };
   int o;
-  while ( (o = getopt_long(argc, argv, "-bhl:d:p:e:", table, NULL)) != -1) {
+  while ( (o = getopt_long(argc, argv, "-bhl:d:p:e:m:", table, NULL)) != -1) {
     switch (o) {
       case 'b': sdb_set_batch_mode(); break;
       case 'p': sscanf(optarg, "%d", &difftest_port); break;
       case 'l': log_file = optarg; break;
       case 'e': elf_file = optarg; break;
       case 'd': diff_so_file = optarg; break;
+      case 'm': mrom_file = optarg; break;
       case 1: img_file = optarg; return 0;
       default:
         printf("Usage: %s [OPTION...] IMAGE [args]\n\n", argv[0]);
@@ -132,8 +161,11 @@ void init_monitor(int argc, char *argv[]) {
   /* Initialize memory. */
   init_mem();
 
-    /* Load the image to memory. This will overwrite the built-in image. */
-  long img_size = load_img();
+  /* Load the image to mrom */
+  long img_size = load_mrom();
+
+  /* Load the image to memory. This will overwrite the built-in image. */
+  // long img_size = load_img();
 
   /* Initialize differential testing. */
   init_difftest(diff_so_file, img_size, difftest_port);
